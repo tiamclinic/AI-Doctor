@@ -19,7 +19,7 @@ Next.js 16（App Router / Route Handlers / sharp / Satori）を **Firebase App H
 - [x] `apphosting.yaml` / `firebase.json` / `.firebaserc` がリポジトリに存在する
 - [x] `app/api/health` がヘルスチェック用に追加されている
 - [x] OGP `metadataBase` が `NEXT_PUBLIC_APP_URL` 経由で切り替わる
-- [ ] Firebase プロジェクト `ai-doctor-23b0c` が Blaze プランに切替済み
+- [ ] Firebase プロジェクト `ai-doctor-5681b` が Blaze プランに切替済み
 - [ ] `OPENAI_API_KEY` が Cloud Secret Manager に登録されている
 - [ ] 本番 URL でランディング → 写真クロップ → 診断 → 結果まで一連が動作する
 - [ ] HTTPS で配信されている（App Hosting 標準）
@@ -40,7 +40,7 @@ Next.js 16（App Router / Route Handlers / sharp / Satori）を **Firebase App H
 
 ### Step 1. Firebase Console で Blaze プランに切替
 
-1. <https://console.firebase.google.com/project/ai-doctor-23b0c/overview?purchaseBillingPlan=metered> を開く
+1. <https://console.firebase.google.com/project/ai-doctor-5681b/overview?purchaseBillingPlan=metered> を開く
 2. **「Blaze プラン → プランを選択」** → 支払い情報を登録
 3. Google Cloud Console > **請求 > 予算とアラート** から予算アラートを追加（推奨：**$5 / $10 / $20** の 3 段階）
 
@@ -65,39 +65,44 @@ npx -y firebase-tools@latest use
 
 ```bash
 # プロンプトで API キー入力 → Cloud Secret Manager に保存される
-npx -y firebase-tools@latest apphosting:secrets:set OPENAI_API_KEY
+npx -y firebase-tools@latest apphosting:secrets:set OPENAI_API_KEY \
+  --project ai-doctor-5681b
 
 # Cloud Run サービスアカウントに secret 参照権限を付与
 npx -y firebase-tools@latest apphosting:secrets:grantaccess OPENAI_API_KEY \
-  --backend tiam-beauty-ai
+  --backend at-doctor \
+  --project ai-doctor-5681b
 ```
 
 ### Step 5. App Hosting backend の作成 + GitHub 連携
 
 **A) Firebase Console から作成する（推奨：CI/CD 即時有効）**
 
-1. <https://console.firebase.google.com/project/ai-doctor-23b0c/apphosting> を開く
+1. <https://console.firebase.google.com/project/ai-doctor-5681b/apphosting> を開く
 2. **「Create backend」**
-   - **Region**: `asia-northeast1`（東京）または `us-central1` のどちらか
+   - **Region**: `us-east4`（既存）/ `asia-northeast1`（東京）/ `us-central1` のいずれか
    - **GitHub repository**: `gtshi88-jpg/AI-Doctor` を選択（初回は GitHub 側で Firebase アプリの installation 承認が必要）
    - **Live branch**: `main`
    - **Root directory**: `/`
-   - **Backend ID**: `tiam-beauty-ai`（`firebase.json` と一致させる）
+   - **Backend ID**: `at-doctor`（`firebase.json` と一致させる）
 3. 「Create」を押すと `main` への push をトリガーに自動デプロイが回り始める
 
 **B) CLI から作成する**
 
 ```bash
 npx -y firebase-tools@latest init apphosting
-# 対話：プロジェクト=ai-doctor-23b0c, region 選択, backend 名=tiam-beauty-ai
+# 対話：プロジェクト=ai-doctor-5681b, region 選択, backend 名=at-doctor
 ```
 
 ### Step 6. 本番 URL を確定 → `apphosting.yaml` 更新
 
-App Hosting backend ができると、`https://<backend-id>--<branch>.<region>.hosted.app` の形で URL が払い出される。確認できたら：
+App Hosting backend ができると、`https://<backend-id>--<project-id>.<region>.hosted.app` の形で URL が払い出される。現在の本番候補 URL:
 
-1. `apphosting.yaml` の `NEXT_PUBLIC_APP_URL` の `value:` を本番 URL に書き換え
-2. commit → push → 自動再デプロイ
+```
+https://at-doctor--ai-doctor-5681b.us-east4.hosted.app
+```
+
+カスタムドメインを後で当てる場合は、確定後に `apphosting.yaml` の `NEXT_PUBLIC_APP_URL` を書き換えて再 push する。
 
 ### Step 7. デプロイ後チェックリスト
 

@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/firebase/firebase-tools/master/schema/firebase-config.json",
   "apphosting": {
-    "backendId": "tiam-beauty-ai",
+    "backendId": "at-doctor",
     "rootDir": "/",
     "ignore": [
       "node_modules",

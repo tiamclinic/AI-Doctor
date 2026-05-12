@@ -6,6 +6,7 @@
 
 # Cloud Run（Next.js SSR / Route Handlers を動かすコンテナ）のスペック。
 # MVP では小規模・スケール抑制の方向で設定し、暴騰を防ぐ。
+# プロパティは公式仕様の cpu / memoryMiB / minInstances / maxInstances / concurrency のみ使用可。
 runConfig:
   cpu: 1
   # Next.js 16 + sharp + Satori（next/og）で十分な余裕を持たせる。
@@ -15,15 +16,12 @@ runConfig:
   # 暴騰防止のための上限。本番運用が始まったら必要に応じて引き上げる。
   maxInstances: 3
   concurrency: 80
-  # /api/generate-portrait は実時間 30〜40 秒かかるため timeout を伸ばす。
-  timeoutSeconds: 75
 
 env:
   # OGP / シェアリンクで使う公開 URL。
-  # 初回デプロイで本番 URL（https://<backend>--<branch>.<region>.hosted.app）が
-  # 確定したら、その値で apphosting.yaml を更新して再デプロイすること。
+  # App Hosting backend のドメインに合わせる。カスタムドメイン適用後は書き換える。
   - variable: NEXT_PUBLIC_APP_URL
-    value: https://ai-doctor-23b0c.web.app
+    value: https://at-doctor--ai-doctor-5681b.us-east4.hosted.app
     availability:
       - BUILD
       - RUNTIME
@@ -31,14 +29,16 @@ env:
   # OpenAI API キー — Cloud Secret Manager に保管したシークレットを参照する。
   # 事前に以下のコマンドで secret を登録しておくこと:
   #   npx -y firebase-tools@latest apphosting:secrets:set OPENAI_API_KEY
+  #   npx -y firebase-tools@latest apphosting:secrets:grantaccess OPENAI_API_KEY --backend at-doctor
   - variable: OPENAI_API_KEY
     secret: OPENAI_API_KEY
     availability:
       - RUNTIME
 
-  # OPENAI_ORG_ID は任意。未設定なら空文字を渡す（OpenAI SDK は undefined と
-  # 同じ扱いになる）。組織 ID を使うなら secret に切り替える。
-  - variable: OPENAI_ORG_ID
-    value: ""
-    availability:
-      - RUNTIME
+  # OPENAI_ORG_ID は通常不要。組織 ID を切り替えたい場合のみ、別途 secret に
+  # 登録した上で以下のブロックをコメントアウト解除して使用する。
+  #   npx -y firebase-tools@latest apphosting:secrets:set OPENAI_ORG_ID
+  # - variable: OPENAI_ORG_ID
+  #   secret: OPENAI_ORG_ID
+  #   availability:
+  #     - RUNTIME
