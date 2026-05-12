@@ -8,62 +8,129 @@
 | 優先度     | 高                                  |
 | 見積       | 2 日                                |
 | 担当       | -                                   |
-| ステータス | 未着手                              |
+| ステータス | コード準備完了 / コンソール設定はユーザー作業 |
 
 ## 概要
 
-Next.js 16（SSR + Route Handlers）を Firebase App Hosting にデプロイする。OpenAI 等のサーバーシークレットは Firebase の環境変数管理に登録する。
+Next.js 16（App Router / Route Handlers / sharp / Satori）を **Firebase App Hosting** にデプロイする。OpenAI 等のサーバーシークレットは **Cloud Secret Manager** に登録し、`apphosting.yaml` から参照する。
 
 ## ゴール / 受け入れ基準
 
-- [ ] 本番 URL でランディング → 診断 → 結果まで一連が動作する
-- [ ] OpenAI API キーが Firebase の Secret として安全に保管されている
-- [ ] HTTPS で配信されている（Firebase 標準）
-- [ ] OGP 画像（シェアカード）が SNS から取得できる
-- [ ] CI/CD（GitHub → Firebase 自動デプロイ）が設定されている
+- [x] `apphosting.yaml` / `firebase.json` / `.firebaserc` がリポジトリに存在する
+- [x] `app/api/health` がヘルスチェック用に追加されている
+- [x] OGP `metadataBase` が `NEXT_PUBLIC_APP_URL` 経由で切り替わる
+- [ ] Firebase プロジェクト `ai-doctor-23b0c` が Blaze プランに切替済み
+- [ ] `OPENAI_API_KEY` が Cloud Secret Manager に登録されている
+- [ ] 本番 URL でランディング → 写真クロップ → 診断 → 結果まで一連が動作する
+- [ ] HTTPS で配信されている（App Hosting 標準）
+- [ ] OpenAI 月額上限（$20〜$50）と Firebase 予算アラートが設定されている
 
-## 設計メモ
+## 構成
 
-### ホスティング選択
+| ファイル | 役割 |
+|---|---|
+| `apphosting.yaml` | App Hosting backend 設定（CPU/メモリ/環境変数/Secret 参照） |
+| `firebase.json` | CLI で `firebase deploy` を行う場合の backend 宣言 |
+| `.firebaserc` | デフォルトプロジェクトを `ai-doctor-23b0c` に設定 |
+| `app/api/health/route.ts` | App Hosting / 監視向け軽量 health endpoint |
+| `app/layout.tsx` | `metadataBase` を `NEXT_PUBLIC_APP_URL` から取得 |
+| `package.json` | `engines.node: ">=20 <23"` を明示 |
 
-- **Firebase App Hosting** を採用（Next.js SSR / Route Handlers をフルサポート）
-- 静的のみで足りる範囲（ランディング）は CDN キャッシュが効く
-- Functions ベースのレガシー Hosting + SSR より新しい App Hosting を推奨
+## デプロイ手順（ユーザー作業）
 
-### 環境変数（Firebase Secret）
+### Step 1. Firebase Console で Blaze プランに切替
 
-| キー                  | 設定先          |
-| --------------------- | --------------- |
-| `OPENAI_API_KEY`      | Secret          |
-| `OPENAI_ORG_ID`       | Secret          |
-| `NEXT_PUBLIC_APP_URL` | Public 環境変数 |
+1. <https://console.firebase.google.com/project/ai-doctor-23b0c/overview?purchaseBillingPlan=metered> を開く
+2. **「Blaze プラン → プランを選択」** → 支払い情報を登録
+3. Google Cloud Console > **請求 > 予算とアラート** から予算アラートを追加（推奨：**$5 / $10 / $20** の 3 段階）
 
-### CI/CD
+### Step 2. OpenAI 側の保険
 
-- GitHub の `main` push で自動ビルド・デプロイ
-- PR ごとにプレビューチャネル（オプション）
+OpenAI ダッシュボード > **Settings > Limits** で **Monthly budget: $30** など上限を設定しておく。
 
-### コスト
+### Step 3. Firebase CLI ログイン
 
-- OpenAI 月額上限を $50 に設定（OpenAI ダッシュボードで設定）
-- Firebase 課金アラートを設定
+```bash
+# 最新の CLI を毎回引いてくる（インストール不要）
+npx -y firebase-tools@latest login
+# 既にログイン済みかの確認
+npx -y firebase-tools@latest use
+# => Active Project: ai-doctor-23b0c になっていれば OK
+```
 
-## TODO
+### Step 4. Cloud Secret Manager に OpenAI API キーを登録
 
-- [ ] Firebase プロジェクトを作成（プロジェクト ID 命名規約に沿う）
-- [ ] Firebase CLI をローカルにインストール `npm i -g firebase-tools`
-- [ ] `firebase login` 後 `firebase init apphosting`（または App Hosting バックエンド作成）
-- [ ] `apphosting.yaml` を作成し、ランタイム / ビルド設定を記載
-- [ ] Firebase Secret に `OPENAI_API_KEY` `OPENAI_ORG_ID` を登録
-- [ ] `NEXT_PUBLIC_APP_URL` を本番 URL に設定
-- [ ] GitHub リポジトリと App Hosting バックエンドを連携
-- [ ] `main` への push で自動デプロイされることを確認
-- [ ] 本番 URL でフルフローの動作確認
-- [ ] OGP 画像が Twitter Card Validator / Facebook Debugger で正しく表示されることを確認
-- [ ] OpenAI 月額上限・Firebase 予算アラートを設定
-- [ ] カスタムドメイン設定（任意、ブランド URL 利用時）
+> **⚠️ ここはターミナルで直接実行してください。**
+> API キーの実値を AI チャットや commit log に絶対に貼らないでください。
+
+```bash
+# プロンプトで API キー入力 → Cloud Secret Manager に保存される
+npx -y firebase-tools@latest apphosting:secrets:set OPENAI_API_KEY
+
+# Cloud Run サービスアカウントに secret 参照権限を付与
+npx -y firebase-tools@latest apphosting:secrets:grantaccess OPENAI_API_KEY \
+  --backend tiam-beauty-ai
+```
+
+### Step 5. App Hosting backend の作成 + GitHub 連携
+
+**A) Firebase Console から作成する（推奨：CI/CD 即時有効）**
+
+1. <https://console.firebase.google.com/project/ai-doctor-23b0c/apphosting> を開く
+2. **「Create backend」**
+   - **Region**: `asia-northeast1`（東京）または `us-central1` のどちらか
+   - **GitHub repository**: `gtshi88-jpg/AI-Doctor` を選択（初回は GitHub 側で Firebase アプリの installation 承認が必要）
+   - **Live branch**: `main`
+   - **Root directory**: `/`
+   - **Backend ID**: `tiam-beauty-ai`（`firebase.json` と一致させる）
+3. 「Create」を押すと `main` への push をトリガーに自動デプロイが回り始める
+
+**B) CLI から作成する**
+
+```bash
+npx -y firebase-tools@latest init apphosting
+# 対話：プロジェクト=ai-doctor-23b0c, region 選択, backend 名=tiam-beauty-ai
+```
+
+### Step 6. 本番 URL を確定 → `apphosting.yaml` 更新
+
+App Hosting backend ができると、`https://<backend-id>--<branch>.<region>.hosted.app` の形で URL が払い出される。確認できたら：
+
+1. `apphosting.yaml` の `NEXT_PUBLIC_APP_URL` の `value:` を本番 URL に書き換え
+2. commit → push → 自動再デプロイ
+
+### Step 7. デプロイ後チェックリスト
+
+```bash
+# ヘルスチェック
+curl https://<本番URL>/api/health
+# → {"status":"ok",...}
+
+# 一連の動作確認
+# 1. ランディングで「同意して進む」 → 写真選択 → クロップ → 「次へ進む」
+# 2. /diagnose で MediaPipe 解析 → 「スコアを計算する」→ 「AI 診断文を生成する」
+# 3. 自動遷移後、/result/<id> でスコア・レーダー・診断文が表示される
+# 4. シェアカードの「シェアカードを生成する」→ PNG プレビュー → ダウンロード
+# 5. （任意）AI 理想顔の「AI で理想顔を生成する」→ Original / TIAM ideal 並び表示
+```
+
+## トラブルシューティング
+
+| 症状 | 対処 |
+|---|---|
+| ビルドが「OPENAI_API_KEY が見つからない」で失敗 | Secret 登録 + grantaccess を再実行。`availability: RUNTIME` だけのため、ビルド時は不要 |
+| OpenAI Images API が `invalid_image_file` | サーバー側で `sharp` による正規化済み。`failOn: "none"` も入っているので、別の画像で再現するか確認 |
+| シェアカード生成で 500（"font url"系） | Google Fonts API のレスポンス形式変更の可能性。`lib/share-card/fonts.ts` の regex を確認 |
+| ヘルスチェックは通るが画面が真っ白 | `NEXT_PUBLIC_APP_URL` の値が間違っている可能性。`apphosting.yaml` の URL を本番 URL に揃える |
+| Cold start が辛い | `apphosting.yaml` の `runConfig.minInstances: 1` に上げると常時 1 台暖機（コスト増） |
+
+## OGP / SNS シェア
+
+T-06 で生成するシェアカードは、現状 `POST /api/share-card` でクライアントからダウンロードする形式。SNS シェア（OGP 画像として自動表示）は **T-09 で結果データを永続化（Firestore など）した後、T-08 で `app/result/[id]/opengraph-image.tsx` を追加して対応**する。
 
 ## リファレンス
 
 - 要件定義書 §8 運用要件
-- Firebase App Hosting: https://firebase.google.com/docs/app-hosting
+- Firebase App Hosting: <https://firebase.google.com/docs/app-hosting>
+- App Hosting Configuration: <https://firebase.google.com/docs/app-hosting/configure>
+- Secret Manager: <https://cloud.google.com/secret-manager>

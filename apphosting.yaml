@@ -1,0 +1,44 @@
+# Firebase App Hosting backend configuration
+# https://firebase.google.com/docs/app-hosting/configure
+#
+# このファイルはリポジトリの root に置く必要があり、`git push` で GitHub に
+# 反映されると Firebase App Hosting がこれを参照してビルド／デプロイする。
+
+# Cloud Run（Next.js SSR / Route Handlers を動かすコンテナ）のスペック。
+# MVP では小規模・スケール抑制の方向で設定し、暴騰を防ぐ。
+runConfig:
+  cpu: 1
+  # Next.js 16 + sharp + Satori（next/og）で十分な余裕を持たせる。
+  memoryMiB: 1024
+  # コールドスタートは許容してコスト最優先（MVP）。
+  minInstances: 0
+  # 暴騰防止のための上限。本番運用が始まったら必要に応じて引き上げる。
+  maxInstances: 3
+  concurrency: 80
+  # /api/generate-portrait は実時間 30〜40 秒かかるため timeout を伸ばす。
+  timeoutSeconds: 75
+
+env:
+  # OGP / シェアリンクで使う公開 URL。
+  # 初回デプロイで本番 URL（https://<backend>--<branch>.<region>.hosted.app）が
+  # 確定したら、その値で apphosting.yaml を更新して再デプロイすること。
+  - variable: NEXT_PUBLIC_APP_URL
+    value: https://ai-doctor-23b0c.web.app
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # OpenAI API キー — Cloud Secret Manager に保管したシークレットを参照する。
+  # 事前に以下のコマンドで secret を登録しておくこと:
+  #   npx -y firebase-tools@latest apphosting:secrets:set OPENAI_API_KEY
+  - variable: OPENAI_API_KEY
+    secret: OPENAI_API_KEY
+    availability:
+      - RUNTIME
+
+  # OPENAI_ORG_ID は任意。未設定なら空文字を渡す（OpenAI SDK は undefined と
+  # 同じ扱いになる）。組織 ID を使うなら secret に切り替える。
+  - variable: OPENAI_ORG_ID
+    value: ""
+    availability:
+      - RUNTIME
