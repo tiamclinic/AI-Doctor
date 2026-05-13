@@ -50,13 +50,25 @@ OpenAI ダッシュボード > **Settings > Limits** で **Monthly budget: $30**
 
 ### Step 3. Firebase CLI ログイン
 
+**重要:** CLI にログインしている Google アカウントは、**App Hosting を作った Firebase プロジェクトのメンバーと同じ**にする。別アカウント（例: 個人の `smilelink000@gmail.com`）のまま `--project ai-doctor-5681b` を指定すると、`Invalid project selection` や Secret Manager の **403** になる。
+
 ```bash
-# 最新の CLI を毎回引いてくる（インストール不要）
+# 現在ログイン中のアカウントを確認
+npx -y firebase-tools@latest login:list
+
+# App Hosting が publicrelations@tiamclinicpr.com 側のプロジェクトなら、
+# 一度ログアウトしてから、そのアカウントで再ログインする
+npx -y firebase-tools@latest logout
 npx -y firebase-tools@latest login
-# 既にログイン済みかの確認
-npx -y firebase-tools@latest use
+
+# このアカウントで見えるプロジェクト一覧（ai-doctor-5681b が出るか確認）
+npx -y firebase-tools@latest projects:list
+
+npx -y firebase-tools@latest use ai-doctor-5681b
 # => Active Project: ai-doctor-5681b になっていれば OK
 ```
+
+**別案（両方のアカウントを使いたい場合）:** `publicrelations@tiamclinicpr.com` で Google Cloud Console の IAM に `smilelink000@gmail.com` を **編集者** などで追加すると、`smilelink000` のまま CLI が使える。
 
 ### Step 4. Cloud Secret Manager に OpenAI API キーを登録
 
@@ -123,6 +135,7 @@ curl https://<本番URL>/api/health
 
 | 症状 | 対処 |
 |---|---|
+| `Invalid project selection` / Secret の **403**（`serviceUsageConsumer`） | CLI の Google アカウントがそのプロジェクトの IAM にいない。**App Hosting を作ったアカウントで `firebase login` し直す**か、オーナーに **smilelink000 を編集者で IAM 追加**してもらう |
 | Cloud Build で `fah/misconfigured-secret` / `Permission 'secretmanager.versions.get' denied` | Secret `OPENAI_API_KEY` が無いか、バックエンドに権限が無い。`apphosting:secrets:set` で作成し、**必ず** `apphosting:secrets:grantaccess OPENAI_API_KEY --backend at-doctor --project ai-doctor-5681b` を実行。Console の環境変数に平文でキーを入れない（ログに出る） |
 | `npm ci` が `package-lock.json` と不整合（`Missing: @emnapi/...`） | ローカルで `npm install` して lock を更新し、`main` に push する（Linux 用 optional 依存が lock に含まれる必要がある） |
 | ビルドが古いコミット（例: `19408d4`）のまま | App Hosting が参照する GitHub の `main` に最新コミットが載っているか確認し、`git push` 先の remote がそのリポジトリと一致しているか確認 |
