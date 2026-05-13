@@ -30,8 +30,11 @@ env:
   # 事前に以下のコマンドで secret を登録しておくこと:
   #   npx -y firebase-tools@latest apphosting:secrets:set OPENAI_API_KEY
   #   npx -y firebase-tools@latest apphosting:secrets:grantaccess OPENAI_API_KEY --backend at-doctor
+  # ビルド preparer がまだ失敗する場合は docs/09-deploy.md Step 4 の「手動 IAM」も実施。
+  # 短い名前だと preparer が解決に失敗することがあるため、プロジェクト番号の完全パスを指定する。
+  # 番号は Firebase Console > プロジェクトの設定 > 全般 の「プロジェクト番号」。
   - variable: OPENAI_API_KEY
-    secret: OPENAI_API_KEY
+    secret: projects/88086403893/secrets/OPENAI_API_KEY
     availability:
       - RUNTIME
 

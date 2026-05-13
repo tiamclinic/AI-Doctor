@@ -86,6 +86,35 @@ npx -y firebase-tools@latest apphosting:secrets:grantaccess OPENAI_API_KEY \
   --project ai-doctor-5681b
 ```
 
+#### preparer でまだ `Misconfigured Secret` / `secretmanager.versions.get` が出る場合
+
+`grantaccess` はバックエンド用の主体に付くが、**ビルドの preparer** は別の Google サービスアカウントで Secret を読むことがある。次の 2 つに、シークレット **`OPENAI_API_KEY`** への **「シークレット マネージャーのシークレット アクセサー」**（`roles/secretmanager.secretAccessor`）を **手動で付与**する（プロジェクト番号は Firebase Console の「プロジェクトの設定」で確認。本リポジトリの例では `88086403893`）。
+
+1. [Secret Manager](https://console.cloud.google.com/security/secret-manager?project=ai-doctor-5681b) → `OPENAI_API_KEY` → **権限** → **アクセス権を付与**
+2. 次のプリンシパルをそれぞれ追加（ロールはどちらも **Secret Manager のシークレット アクセサー**）:
+
+| プリンシパル（サービスアカウント） | 用途の目安 |
+|-----------------------------------|------------|
+| `service-88086403893@gcp-sa-firebaseapphosting.iam.gserviceaccount.com` | Firebase App Hosting 連携 |
+| `88086403893@cloudbuild.gserviceaccount.com` | Cloud Build（App Hosting のビルド） |
+
+CLI で付与する例（`gcloud` が入っている場合）:
+
+```bash
+PROJECT=ai-doctor-5681b
+NUM=88086403893   # プロジェクト番号に置き換え
+
+gcloud secrets add-iam-policy-binding OPENAI_API_KEY --project="$PROJECT" \
+  --member="serviceAccount:service-${NUM}@gcp-sa-firebaseapphosting.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+
+gcloud secrets add-iam-policy-binding OPENAI_API_KEY --project="$PROJECT" \
+  --member="serviceAccount:${NUM}@cloudbuild.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+```
+
+付与後、数分待ってから App Hosting のロールアウトを再実行する。
+
 ### Step 5. App Hosting backend の作成 + GitHub 連携
 
 **A) Firebase Console から作成する（推奨：CI/CD 即時有効）**
@@ -136,7 +165,7 @@ curl https://<本番URL>/api/health
 | 症状 | 対処 |
 |---|---|
 | `Invalid project selection` / Secret の **403**（`serviceUsageConsumer`） | CLI の Google アカウントがそのプロジェクトの IAM にいない。**App Hosting を作ったアカウントで `firebase login` し直す**か、オーナーに **smilelink000 を編集者で IAM 追加**してもらう |
-| Cloud Build で `fah/misconfigured-secret` / `Permission 'secretmanager.versions.get' denied` | Secret `OPENAI_API_KEY` が無いか、バックエンドに権限が無い。`apphosting:secrets:set` で作成し、**必ず** `apphosting:secrets:grantaccess OPENAI_API_KEY --backend at-doctor --project ai-doctor-5681b` を実行。Console の環境変数に平文でキーを入れない（ログに出る） |
+| Cloud Build で `fah/misconfigured-secret` / `Permission 'secretmanager.versions.get' denied` | ① `apphosting:secrets:set` と `grantaccess --backend at-doctor` を実行済みか確認。② `apphosting.yaml` の `secret` を `projects/<プロジェクト番号>/secrets/OPENAI_API_KEY` 形式にする（本リポジトリは番号 `88086403893`）。③ それでも失敗する場合は **Cloud Build SA** と **Firebase App Hosting SA** にシークレット単位で `secretAccessor` を手動付与（上記 Step 4 の補足）。Console の環境変数に平文でキーを入れない |
 | `npm ci` が `package-lock.json` と不整合（`Missing: @emnapi/...`） | ローカルで `npm install` して lock を更新し、`main` に push する（Linux 用 optional 依存が lock に含まれる必要がある） |
 | ビルドが古いコミット（例: `19408d4`）のまま | App Hosting が参照する GitHub の `main` に最新コミットが載っているか確認し、`git push` 先の remote がそのリポジトリと一致しているか確認 |
 | ビルドが「OPENAI_API_KEY が見つからない」で失敗 | Secret 登録 + grantaccess を再実行。`availability: RUNTIME` だけのため、ビルド時は不要 |
