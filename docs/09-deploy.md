@@ -31,7 +31,7 @@ Next.js 16（App Router / Route Handlers / sharp / Satori）を **Firebase App H
 |---|---|
 | `apphosting.yaml` | App Hosting backend 設定（CPU/メモリ/環境変数/Secret 参照） |
 | `firebase.json` | CLI で `firebase deploy` を行う場合の backend 宣言 |
-| `.firebaserc` | デフォルトプロジェクトを `ai-doctor-23b0c` に設定 |
+| `.firebaserc` | デフォルトプロジェクトを `ai-doctor-5681b` に設定 |
 | `app/api/health/route.ts` | App Hosting / 監視向け軽量 health endpoint |
 | `app/layout.tsx` | `metadataBase` を `NEXT_PUBLIC_APP_URL` から取得 |
 | `package.json` | `engines.node: ">=20 <23"` を明示 |
@@ -55,7 +55,7 @@ OpenAI ダッシュボード > **Settings > Limits** で **Monthly budget: $30**
 npx -y firebase-tools@latest login
 # 既にログイン済みかの確認
 npx -y firebase-tools@latest use
-# => Active Project: ai-doctor-23b0c になっていれば OK
+# => Active Project: ai-doctor-5681b になっていれば OK
 ```
 
 ### Step 4. Cloud Secret Manager に OpenAI API キーを登録
@@ -81,7 +81,7 @@ npx -y firebase-tools@latest apphosting:secrets:grantaccess OPENAI_API_KEY \
 1. <https://console.firebase.google.com/project/ai-doctor-5681b/apphosting> を開く
 2. **「Create backend」**
    - **Region**: `us-east4`（既存）/ `asia-northeast1`（東京）/ `us-central1` のいずれか
-   - **GitHub repository**: `gtshi88-jpg/AI-Doctor` を選択（初回は GitHub 側で Firebase アプリの installation 承認が必要）
+   - **GitHub repository**: `tiamclinic/AI-Doctor` を選択（初回は GitHub 側で Firebase アプリの installation 承認が必要）
    - **Live branch**: `main`
    - **Root directory**: `/`
    - **Backend ID**: `at-doctor`（`firebase.json` と一致させる）
@@ -123,6 +123,9 @@ curl https://<本番URL>/api/health
 
 | 症状 | 対処 |
 |---|---|
+| Cloud Build で `fah/misconfigured-secret` / `Permission 'secretmanager.versions.get' denied` | Secret `OPENAI_API_KEY` が無いか、バックエンドに権限が無い。`apphosting:secrets:set` で作成し、**必ず** `apphosting:secrets:grantaccess OPENAI_API_KEY --backend at-doctor --project ai-doctor-5681b` を実行。Console の環境変数に平文でキーを入れない（ログに出る） |
+| `npm ci` が `package-lock.json` と不整合（`Missing: @emnapi/...`） | ローカルで `npm install` して lock を更新し、`main` に push する（Linux 用 optional 依存が lock に含まれる必要がある） |
+| ビルドが古いコミット（例: `19408d4`）のまま | App Hosting が参照する GitHub の `main` に最新コミットが載っているか確認し、`git push` 先の remote がそのリポジトリと一致しているか確認 |
 | ビルドが「OPENAI_API_KEY が見つからない」で失敗 | Secret 登録 + grantaccess を再実行。`availability: RUNTIME` だけのため、ビルド時は不要 |
 | OpenAI Images API が `invalid_image_file` | サーバー側で `sharp` による正規化済み。`failOn: "none"` も入っているので、別の画像で再現するか確認 |
 | シェアカード生成で 500（"font url"系） | Google Fonts API のレスポンス形式変更の可能性。`lib/share-card/fonts.ts` の regex を確認 |
