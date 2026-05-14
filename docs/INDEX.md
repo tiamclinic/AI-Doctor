@@ -2,7 +2,9 @@
 
 TIAM Beauty AI 診断 MVP のチケット（タスク）一覧です。各ファイルに TODO チェックリストを持ち、進捗管理もこのフォルダで完結させます。
 
-- 親要件: [要件定義書.md](../要件定義書.md)
+> 📘 **第三者向け開発ドキュメント** は [README.md](./README.md) から `api/` / `architecture/` / `features/` / `guides/` を参照してください。INDEX はあくまで MVP 開発時のチケット履歴です。
+
+- 親要件: [requirements.md](./requirements.md)
 - プロジェクト本体: リポジトリルート（`package.json` がある階層。Next.js アプリとこの `docs/` が並ぶ）
 
 ## ステータス凡例
@@ -21,13 +23,13 @@ TIAM Beauty AI 診断 MVP のチケット（タスク）一覧です。各ファ
 | 05  | [結果画面表示](./05-result-screen.md)                                   | F-05     | 高     | 完了       | 03, 04     |
 | 06  | [シェアカード生成（Satori）](./06-share-card.md)                        | F-06     | 高     | 完了       | 05         |
 | 07  | [AI 理想顔生成（gpt-image-1）](./07-ai-ideal-portrait.md)               | F-07     | 中     | 完了       | 03         |
-| 08  | [SNS シェア](./08-sns-share.md)                                         | F-08     | 中     | 未着手     | 06         |
+| 08  | [SNS シェア](./08-sns-share.md)                                         | F-08     | 中     | 完了       | 06         |
 | 09  | [Firebase デプロイ](./09-deploy.md)                                     | -        | 高     | 完了       | 01–08      |
 | 10  | [QA・リーガル・ベータ公開](./10-qa-release.md)                          | -        | 高     | 未着手     | 09         |
 
 ## 進捗サマリ
 
-- 完了: 9 / 11
+- 完了: 10 / 11
 - 進行中: 0 / 11
 
 ## 依存関係（ガント概要）

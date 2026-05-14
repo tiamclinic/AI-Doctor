@@ -7,6 +7,8 @@ import * as React from "react";
 import { DiagnosisText } from "@/components/DiagnosisText";
 import { FaceLandmarkOverlay } from "@/components/FaceLandmarkOverlay";
 import { IdealPortrait } from "@/components/IdealPortrait";
+import { CopyLinkButton } from "@/components/share/CopyLinkButton";
+import { ShareButtons } from "@/components/share/ShareButtons";
 import { ScoreCircle } from "@/components/ScoreCircle";
 import { ScoreRadar } from "@/components/ScoreRadar";
 import { ShareCardButton } from "@/components/ShareCardButton";
@@ -28,6 +30,15 @@ export default function ResultPage({
   const scoreResult = useDiagnosisStore((s) => s.scoreResult);
   const diagnosisText = useDiagnosisStore((s) => s.diagnosisText);
   const clearPhoto = useDiagnosisStore((s) => s.clearPhoto);
+
+  const sharePageUrl = React.useMemo(() => {
+    const fromEnv = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "");
+    if (fromEnv) return `${fromEnv}/result/${id}`;
+    if (typeof window !== "undefined") {
+      return `${window.location.origin}/result/${id}`;
+    }
+    return "";
+  }, [id]);
 
   // ストアと URL の id が一致しなければ MVP では復元できないので / に戻す
   React.useEffect(() => {
@@ -97,6 +108,32 @@ export default function ResultPage({
         </Card>
 
         {diagnosisText && <DiagnosisText result={diagnosisText} />}
+
+        <Card className="border-border/80" suppressHydrationWarning>
+          <CardContent className="flex flex-col gap-5 p-6 sm:p-8">
+            <div className="flex flex-col items-center text-center">
+              <div className="flex items-center gap-2">
+                <Share2 className="text-tiam-gold size-4" />
+                <h3 className="font-heading text-tiam-primary text-sm tracking-tight">
+                  SNS で共有
+                </h3>
+              </div>
+              <p className="text-muted-foreground mt-2 max-w-md text-xs leading-relaxed">
+                X / LINE は Web から共有を開きます。Instagram
+                はシェアカード画像の保存後、ストーリーズへ手動で投稿してください。
+              </p>
+            </div>
+            <ShareButtons
+              resultId={id}
+              pageUrl={sharePageUrl}
+              score={scoreResult}
+              diagnosis={diagnosisText}
+            />
+            <div className="flex justify-center">
+              <CopyLinkButton url={sharePageUrl} />
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="border-border/80">
           <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:p-8">

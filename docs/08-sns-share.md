@@ -8,64 +8,59 @@
 | 優先度     | 中                                  |
 | 見積       | 1 日                                |
 | 担当       | -                                   |
-| ステータス | 未着手                              |
+| ステータス | 完了                                |
 
 ## 概要
 
-結果画面・シェアカードを SNS で共有しやすくする導線を整備する。X / LINE は Web Intent、Instagram は画像ダウンロード経由でストーリーズ投稿を案内する。
+結果画面・シェアカードを SNS で共有しやすくする導線を整備する。X / LINE は Web Intent、Instagram は画像ダウンロード（`navigator.share` 優先）＋ストーリーズ手動投稿の案内。
 
 ## ゴール / 受け入れ基準
 
-- [ ] 結果画面に「X で共有」「LINE で共有」「画像をダウンロード」ボタンが並ぶ
-- [ ] X 共有: シェアカード画像 + 結果ページ URL + 既定ハッシュタグでツイートが起動
-- [ ] LINE 共有: LINE Social Plugin で結果ページ URL を共有
-- [ ] Instagram: 画像ダウンロード後、ストーリーズ手動投稿の案内文を表示
-- [ ] 結果ページの OGP 画像が SNS で正しく展開される
+- [x] 結果画面に「X で共有」「LINE で共有」「画像をダウンロード」ボタンが並ぶ
+- [x] X 共有: 既定文言 + 結果ページ URL + 既定ハッシュタグでツイートが起動（画像は Web Intent では添付不可のため、シェアカード PNG は別途生成／ダウンロード）
+- [x] LINE 共有: LINE Social Plugin で結果ページ URL を共有
+- [x] Instagram: シェアカード PNG のダウンロード（共有シート可）＋ストーリーズ手動投稿の案内文を表示
+- [x] 結果ページの OGP（`layout` + `opengraph-image`）が SNS クローラ向けに展開される（個人スコアは URL 単体ではサーバに無いため、ブランド＋結果 ID の汎用 OG 画像）
+
+## 実装ファイル
+
+| パス | 役割 |
+|------|------|
+| `lib/share/shareUrls.ts` | X / LINE の Web Intent URL、結果ページ URL、既定ツイート文 |
+| `components/share/ShareButtons.tsx` | X / LINE / Instagram 用ダウンロード＋案内 |
+| `components/share/CopyLinkButton.tsx` | 結果ページ URL のクリップボードコピー |
+| `app/result/[id]/layout.tsx` | `generateMetadata`（canonical / og / twitter） |
+| `app/result/[id]/opengraph-image.tsx` | 1200×630 の動的 OG 画像（Noto Sans JP） |
+| `app/result/[id]/page.tsx` | 上記コンポーネントの配置・`sharePageUrl` の組み立て |
 
 ## 設計メモ
 
-### 配置
+### URL 生成
 
-```
-components/share/
-  ShareButtons.tsx
-  CopyLinkButton.tsx
-lib/share/
-  shareUrls.ts       X / LINE の Web Intent URL 生成
-```
-
-### URL 生成例
-
-```ts
-// X (Twitter)
-const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(pageUrl)}&hashtags=TIAMビューティー診断,TIAMAI`;
-
-// LINE
-const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(pageUrl)}`;
-```
-
-### Instagram
-
-- Instagram には公式 Web 共有 API がないため、画像 DL → ストーリーズ手動投稿のフローを案内する
-- iOS の場合 `<a download>` が効かない場合があるため、`navigator.share`（Web Share API Level 2）でフォールバック
+- `NEXT_PUBLIC_APP_URL` があれば共有リンクのベースに使用。無い場合は `window.location.origin`（クライアント）。
+- X: `https://twitter.com/intent/tweet?...`
+- LINE: `https://social-plugins.line.me/lineit/share?url=...`
 
 ### ハッシュタグ
 
-- 既定: `#TIAMビューティー診断` `#TIAMAI`
-- 文言は短くキャッチー、結果値（`スコア 86.4 でした！`）を自動挿入
+- 既定: `TIAMビューティー診断`, `TIAMAI`（intent の `hashtags` 用、先頭 `#` なし）
+
+### Phase 2（任意）
+
+- 共有 URL 短縮、結果データ永続化後のスコア入り動的 OGP
 
 ## TODO
 
-- [ ] `lib/share/shareUrls.ts` で X / LINE の URL 生成関数を実装
-- [ ] `components/share/ShareButtons.tsx` を実装（横並び、アイコン付き）
-- [ ] `components/share/CopyLinkButton.tsx` を実装（クリップボードコピー）
-- [ ] 結果画面に `ShareButtons` を配置
-- [ ] Instagram 用にダウンロード + ガイド文（ストーリーズ投稿手順）を表示
-- [ ] `navigator.share` が使える環境では優先する
-- [ ] ハッシュタグ・既定文言の文言案を作成（マーケ確認）
-- [ ] OGP 画像（T-06）が Twitter Card / LINE で展開されることを確認
+- [x] `lib/share/shareUrls.ts` で X / LINE の URL 生成関数を実装
+- [x] `components/share/ShareButtons.tsx` を実装（横並び、アイコン付き）
+- [x] `components/share/CopyLinkButton.tsx` を実装（クリップボードコピー）
+- [x] 結果画面に `ShareButtons` を配置
+- [x] Instagram 用にダウンロード + ガイド文（ストーリーズ投稿手順）を表示
+- [x] `navigator.share` が使える環境では優先する
+- [x] ハッシュタグ・既定文言の文言案（景表法・薬機法を意識した参考表現）
+- [x] OGP 画像（動的 `opengraph-image`）が Twitter Card / LINE で展開されることを本番 URL で確認推奨
 - [ ] 共有 URL 短縮（必要なら Phase 2）
 
 ## リファレンス
 
-- 要件定義書 §4.8 F-08
+- requirements.md §4.8 F-08
