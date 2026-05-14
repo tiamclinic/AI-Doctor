@@ -8,7 +8,7 @@
 | 優先度     | 高                                  |
 | 見積       | 2 日                                |
 | 担当       | -                                   |
-| ステータス | コード準備完了 / コンソール設定はユーザー作業 |
+| ステータス | 完了（本番 URL 稼働。予算アラート等の運用推奨項目は各自確認） |
 
 ## 概要
 
@@ -19,11 +19,11 @@ Next.js 16（App Router / Route Handlers / sharp / Satori）を **Firebase App H
 - [x] `apphosting.yaml` / `firebase.json` / `.firebaserc` がリポジトリに存在する
 - [x] `app/api/health` がヘルスチェック用に追加されている
 - [x] OGP `metadataBase` が `NEXT_PUBLIC_APP_URL` 経由で切り替わる
-- [ ] Firebase プロジェクト `ai-doctor-5681b` が Blaze プランに切替済み
-- [ ] `OPENAI_API_KEY` が Cloud Secret Manager に登録されている
-- [ ] 本番 URL でランディング → 写真クロップ → 診断 → 結果まで一連が動作する
-- [ ] HTTPS で配信されている（App Hosting 標準）
-- [ ] OpenAI 月額上限（$20〜$50）と Firebase 予算アラートが設定されている
+- [x] Firebase プロジェクト `ai-doctor-5681b` が Blaze プランに切替済み（App Hosting 利用の前提）
+- [x] `OPENAI_API_KEY` が Cloud Secret Manager に登録され、`at-doctor` から参照可能
+- [x] 本番 URL でランディング → 写真クロップ → 診断 → 結果まで一連が動作する
+- [x] HTTPS で配信されている（App Hosting 標準）
+- [ ] **（運用推奨）** OpenAI 月額上限と GCP 予算アラート（例: $5 / $10 / $20）を未設定ならコンソールで設定する
 
 ## 構成
 
