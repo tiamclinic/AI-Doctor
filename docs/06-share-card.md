@@ -92,5 +92,5 @@ components/
 
 ## リファレンス
 
-- 要件定義書 §4.6 F-06
+- requirements.md §4.6 F-06
 - Satori: https://github.com/vercel/satori

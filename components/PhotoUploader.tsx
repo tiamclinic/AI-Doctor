@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { trackEvent } from "@/lib/analytics/track";
 import { hasTermsConsent } from "@/lib/consent";
 import { heicToJpegFile } from "@/lib/image/heicToJpeg";
 import { readFileAsDataURL } from "@/lib/image/readDataUrl";
@@ -100,6 +101,10 @@ export function PhotoUploader({
     (file: File, dataUrl: string) => {
       setCropped({ file, dataUrl });
       onSelect(file, dataUrl);
+      void trackEvent("upload", {
+        mime: file.type || "unknown",
+        size_kb: Math.round(file.size / 1024),
+      });
     },
     [onSelect],
   );

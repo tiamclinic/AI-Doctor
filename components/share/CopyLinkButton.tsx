@@ -4,6 +4,7 @@ import { Check, Link2 } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/lib/analytics/track";
 import { cn } from "@/lib/utils";
 
 type CopyLinkButtonProps = {
@@ -19,6 +20,7 @@ export function CopyLinkButton({ url, className }: CopyLinkButtonProps) {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      void trackEvent("share_clicked", { channel: "copy_link" });
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
       window.prompt("以下の URL をコピーしてください", url);

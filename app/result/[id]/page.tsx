@@ -1,16 +1,18 @@
 "use client";
 
-import { Share2, Sparkles, Wand2 } from "lucide-react";
+import { Share2, Wand2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import { DiagnosisText } from "@/components/DiagnosisText";
-import { FaceLandmarkOverlay } from "@/components/FaceLandmarkOverlay";
 import { IdealPortrait } from "@/components/IdealPortrait";
+import { MetricBarList } from "@/components/result/MetricBarList";
+import { PartAnalysisGrid } from "@/components/result/PartAnalysisGrid";
+import { ResultHero } from "@/components/result/ResultHero";
+import { ResultSectionHeader } from "@/components/result/ResultSectionHeader";
+import { TotalScoreCard } from "@/components/result/TotalScoreCard";
 import { CopyLinkButton } from "@/components/share/CopyLinkButton";
 import { ShareButtons } from "@/components/share/ShareButtons";
-import { ScoreCircle } from "@/components/ScoreCircle";
-import { ScoreRadar } from "@/components/ScoreRadar";
 import { ShareCardButton } from "@/components/ShareCardButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,7 +42,6 @@ export default function ResultPage({
     return "";
   }, [id]);
 
-  // ストアと URL の id が一致しなければ MVP では復元できないので / に戻す
   React.useEffect(() => {
     if (!resultId || resultId !== id || !scoreResult || !photoDataUrl) {
       router.replace("/");
@@ -62,52 +63,57 @@ export default function ResultPage({
 
   return (
     <main className="flex flex-1 flex-col items-center px-4 py-12 sm:py-16">
-      <div className="flex w-full max-w-3xl flex-col gap-8">
+      <div className="flex w-full max-w-5xl flex-col gap-8">
         <header className="flex flex-col items-center text-center">
           <span className="text-tiam-gold font-heading text-[10px] tracking-[0.3em] uppercase">
             TIAM Beauty AI Report
           </span>
           <h1 className="font-heading text-tiam-primary mt-2 text-2xl tracking-tight sm:text-3xl">
-            あなたの美容バランス診断結果
+            黄金比診断結果
           </h1>
-          <p className="text-muted-foreground mt-2 text-xs">
+          <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
+            あなたの顔を黄金比に基づいて分析しました。
+          </p>
+          <p className="text-muted-foreground mt-2 text-[10px]">
             ID: <span className="font-mono">{id}</span>
           </p>
         </header>
 
-        <Card className="border-border/80 overflow-hidden">
-          <CardContent className="grid gap-8 p-6 sm:grid-cols-[1.1fr_1fr] sm:p-8">
-            <div className="border-border bg-muted/30 relative overflow-hidden rounded-xl border">
-              <FaceLandmarkOverlay
-                dataUrl={photoDataUrl}
-                result={detectResult}
-                showLandmarks
-              />
-            </div>
-            <div className="flex flex-col items-center justify-center gap-4">
-              <ScoreCircle value={scoreResult.totalScore} size={220} />
-              <p className="text-muted-foreground text-center text-xs leading-relaxed">
-                6 大指標を加重平均した、TIAM 独自の
-                <br />
-                美容バランス指数です。
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* 上段: 写真+顔タイプ／印象（左） と 総合評価+各パーツの比率（右） */}
+        <div className="grid items-start gap-6 lg:grid-cols-[1.05fr_1fr]">
+          <ResultHero
+            photoDataUrl={photoDataUrl}
+            detectResult={detectResult}
+            scoreResult={scoreResult}
+          />
 
-        <Card className="border-border/80">
-          <CardContent className="flex flex-col items-center gap-6 p-6 sm:p-8">
-            <div className="flex w-full items-center gap-2">
-              <Sparkles className="text-tiam-gold size-4" />
-              <h2 className="font-heading text-tiam-primary text-sm tracking-tight">
-                6 大指標バランス
-              </h2>
-            </div>
-            <ScoreRadar result={scoreResult} size={340} />
-          </CardContent>
-        </Card>
+          <div className="flex flex-col gap-6">
+            <TotalScoreCard scoreResult={scoreResult} />
+            <section className="border-border/80 bg-card rounded-xl border p-5 shadow-sm sm:p-6">
+              <MetricBarList result={scoreResult} showHeader />
+            </section>
+          </div>
+        </div>
 
-        {diagnosisText && <DiagnosisText result={diagnosisText} />}
+        {/* 中段: パーツ分析 */}
+        <section>
+          <ResultSectionHeader
+            title="パーツごとの詳細分析"
+            subtitle="各部位の傾向を TIAM AI のルールベース短文で要約しています（院方コメントは今後ここに併記予定）。"
+          />
+          <PartAnalysisGrid scoreResult={scoreResult} />
+        </section>
+
+        {/* 下段: 総評 */}
+        {diagnosisText ? (
+          <section>
+            <ResultSectionHeader
+              title="総評・詳細レポート"
+              subtitle="OpenAI により生成された文章です。"
+            />
+            <DiagnosisText result={diagnosisText} />
+          </section>
+        ) : null}
 
         <Card className="border-border/80" suppressHydrationWarning>
           <CardContent className="flex flex-col gap-5 p-6 sm:p-8">

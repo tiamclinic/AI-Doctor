@@ -11,6 +11,7 @@ import {
   requestShareCard,
   triggerDownload,
 } from "@/lib/share-card/client";
+import { trackEvent } from "@/lib/analytics/track";
 import {
   buildDefaultShareTweetText,
   buildLineShareUrl,
@@ -55,15 +56,18 @@ export function ShareButtons({
 
   const openX = React.useCallback(() => {
     if (!xHref) return;
+    void trackEvent("share_clicked", { channel: "x" });
     window.open(xHref, "_blank", "noopener,noreferrer");
   }, [xHref]);
 
   const openLine = React.useCallback(() => {
     if (!lineHref) return;
+    void trackEvent("share_clicked", { channel: "line" });
     window.open(lineHref, "_blank", "noopener,noreferrer");
   }, [lineHref]);
 
   const downloadShareCardForInstagram = React.useCallback(async () => {
+    void trackEvent("share_clicked", { channel: "instagram" });
     setIgError(null);
     setIgBusy(true);
     try {

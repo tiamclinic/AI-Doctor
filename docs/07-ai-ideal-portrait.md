@@ -110,5 +110,5 @@ type PortraitResponse = {
 
 ## リファレンス
 
-- 要件定義書 §4.7 F-07
+- requirements.md §4.7 F-07
 - OpenAI Images: https://platform.openai.com/docs/guides/images

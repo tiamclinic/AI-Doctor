@@ -1,14 +1,16 @@
 # 09. Firebase デプロイ
 
-| 項目       | 内容                                |
-| ---------- | ----------------------------------- |
-| チケットID | T-09                                |
-| 関連要件   | -（運用要件）                       |
-| 依存       | T-01〜T-08                          |
-| 優先度     | 高                                  |
-| 見積       | 2 日                                |
-| 担当       | -                                   |
-| ステータス | 完了（本番 URL 稼働。予算アラート等の運用推奨項目は各自確認） |
+
+| 項目     | 内容                                |
+| ------ | --------------------------------- |
+| チケットID | T-09                              |
+| 関連要件   | -（運用要件）                           |
+| 依存     | T-01〜T-08                         |
+| 優先度    | 高                                 |
+| 見積     | 2 日                               |
+| 担当     | -                                 |
+| ステータス  | 完了（本番 URL 稼働。予算アラート等の運用推奨項目は各自確認） |
+
 
 ## 概要
 
@@ -16,31 +18,33 @@ Next.js 16（App Router / Route Handlers / sharp / Satori）を **Firebase App H
 
 ## ゴール / 受け入れ基準
 
-- [x] `apphosting.yaml` / `firebase.json` / `.firebaserc` がリポジトリに存在する
-- [x] `app/api/health` がヘルスチェック用に追加されている
-- [x] OGP `metadataBase` が `NEXT_PUBLIC_APP_URL` 経由で切り替わる
-- [x] Firebase プロジェクト `ai-doctor-5681b` が Blaze プランに切替済み（App Hosting 利用の前提）
-- [x] `OPENAI_API_KEY` が Cloud Secret Manager に登録され、`at-doctor` から参照可能
-- [x] 本番 URL でランディング → 写真クロップ → 診断 → 結果まで一連が動作する
-- [x] HTTPS で配信されている（App Hosting 標準）
-- [ ] **（運用推奨）** OpenAI 月額上限と GCP 予算アラート（例: $5 / $10 / $20）を未設定ならコンソールで設定する
+- `apphosting.yaml` / `firebase.json` / `.firebaserc` がリポジトリに存在する
+- `app/api/health` がヘルスチェック用に追加されている
+- OGP `metadataBase` が `NEXT_PUBLIC_APP_URL` 経由で切り替わる
+- Firebase プロジェクト `ai-doctor-5681b` が Blaze プランに切替済み（App Hosting 利用の前提）
+- `OPENAI_API_KEY` が Cloud Secret Manager に登録され、`at-doctor` から参照可能
+- 本番 URL でランディング → 写真クロップ → 診断 → 結果まで一連が動作する
+- HTTPS で配信されている（App Hosting 標準）
+- **（運用推奨）** OpenAI 月額上限と GCP 予算アラート（例: $5 / $10 / $20）を未設定ならコンソールで設定する
 
 ## 構成
 
-| ファイル | 役割 |
-|---|---|
-| `apphosting.yaml` | App Hosting backend 設定（CPU/メモリ/環境変数/Secret 参照） |
-| `firebase.json` | CLI で `firebase deploy` を行う場合の backend 宣言 |
-| `.firebaserc` | デフォルトプロジェクトを `ai-doctor-5681b` に設定 |
-| `app/api/health/route.ts` | App Hosting / 監視向け軽量 health endpoint |
-| `app/layout.tsx` | `metadataBase` を `NEXT_PUBLIC_APP_URL` から取得 |
-| `package.json` | `engines.node: ">=20 <23"` を明示 |
+
+| ファイル                      | 役割                                             |
+| ------------------------- | ---------------------------------------------- |
+| `apphosting.yaml`         | App Hosting backend 設定（CPU/メモリ/環境変数/Secret 参照） |
+| `firebase.json`           | CLI で `firebase deploy` を行う場合の backend 宣言      |
+| `.firebaserc`             | デフォルトプロジェクトを `ai-doctor-5681b` に設定             |
+| `app/api/health/route.ts` | App Hosting / 監視向け軽量 health endpoint           |
+| `app/layout.tsx`          | `metadataBase` を `NEXT_PUBLIC_APP_URL` から取得    |
+| `package.json`            | `engines.node: ">=20 <23"` を明示                 |
+
 
 ## デプロイ手順（ユーザー作業）
 
 ### Step 1. Firebase Console で Blaze プランに切替
 
-1. <https://console.firebase.google.com/project/ai-doctor-5681b/overview?purchaseBillingPlan=metered> を開く
+1. [https://console.firebase.google.com/project/ai-doctor-5681b/overview?purchaseBillingPlan=metered](https://console.firebase.google.com/project/ai-doctor-5681b/overview?purchaseBillingPlan=metered) を開く
 2. **「Blaze プラン → プランを選択」** → 支払い情報を登録
 3. Google Cloud Console > **請求 > 予算とアラート** から予算アラートを追加（推奨：**$5 / $10 / $20** の 3 段階）
 
@@ -88,15 +92,17 @@ npx -y firebase-tools@latest apphosting:secrets:grantaccess OPENAI_API_KEY \
 
 #### preparer でまだ `Misconfigured Secret` / `secretmanager.versions.get` が出る場合
 
-`grantaccess` はバックエンド用の主体に付くが、**ビルドの preparer** は別の Google サービスアカウントで Secret を読むことがある。次の 2 つに、シークレット **`OPENAI_API_KEY`** への **「シークレット マネージャーのシークレット アクセサー」**（`roles/secretmanager.secretAccessor`）を **手動で付与**する（プロジェクト番号は Firebase Console の「プロジェクトの設定」で確認。本リポジトリの例では `88086403893`）。
+`grantaccess` はバックエンド用の主体に付くが、**ビルドの preparer** は別の Google サービスアカウントで Secret を読むことがある。次の 2 つに、シークレット `**OPENAI_API_KEY`** への **「シークレット マネージャーのシークレット アクセサー」**（`roles/secretmanager.secretAccessor`）を **手動で付与**する（プロジェクト番号は Firebase Console の「プロジェクトの設定」で確認。本リポジトリの例では `88086403893`）。
 
 1. [Secret Manager](https://console.cloud.google.com/security/secret-manager?project=ai-doctor-5681b) → `OPENAI_API_KEY` → **権限** → **アクセス権を付与**
 2. 次のプリンシパルをそれぞれ追加（ロールはどちらも **Secret Manager のシークレット アクセサー**）:
 
-| プリンシパル（サービスアカウント） | 用途の目安 |
-|-----------------------------------|------------|
-| `service-88086403893@gcp-sa-firebaseapphosting.iam.gserviceaccount.com` | Firebase App Hosting 連携 |
-| `88086403893@cloudbuild.gserviceaccount.com` | Cloud Build（App Hosting のビルド） |
+
+| プリンシパル（サービスアカウント）                                                       | 用途の目安                         |
+| ----------------------------------------------------------------------- | ----------------------------- |
+| `service-88086403893@gcp-sa-firebaseapphosting.iam.gserviceaccount.com` | Firebase App Hosting 連携       |
+| `88086403893@cloudbuild.gserviceaccount.com`                            | Cloud Build（App Hosting のビルド） |
+
 
 CLI で付与する例（`gcloud` が入っている場合）:
 
@@ -119,13 +125,13 @@ gcloud secrets add-iam-policy-binding OPENAI_API_KEY --project="$PROJECT" \
 
 **A) Firebase Console から作成する（推奨：CI/CD 即時有効）**
 
-1. <https://console.firebase.google.com/project/ai-doctor-5681b/apphosting> を開く
+1. [https://console.firebase.google.com/project/ai-doctor-5681b/apphosting](https://console.firebase.google.com/project/ai-doctor-5681b/apphosting) を開く
 2. **「Create backend」**
-   - **Region**: `us-east4`（既存）/ `asia-northeast1`（東京）/ `us-central1` のいずれか
-   - **GitHub repository**: `tiamclinic/AI-Doctor` を選択（初回は GitHub 側で Firebase アプリの installation 承認が必要）
-   - **Live branch**: `main`
-   - **Root directory**: `/`
-   - **Backend ID**: `at-doctor`（`firebase.json` と一致させる）
+  - **Region**: `us-east4`（既存）/ `asia-northeast1`（東京）/ `us-central1` のいずれか
+  - **GitHub repository**: `tiamclinic/AI-Doctor` を選択（初回は GitHub 側で Firebase アプリの installation 承認が必要）
+  - **Live branch**: `main`
+  - **Root directory**: `/`
+  - **Backend ID**: `at-doctor`（`firebase.json` と一致させる）
 3. 「Create」を押すと `main` への push をトリガーに自動デプロイが回り始める
 
 **B) CLI から作成する**
@@ -162,17 +168,19 @@ curl https://<本番URL>/api/health
 
 ## トラブルシューティング
 
-| 症状 | 対処 |
-|---|---|
-| `Invalid project selection` / Secret の **403**（`serviceUsageConsumer`） | CLI の Google アカウントがそのプロジェクトの IAM にいない。**App Hosting を作ったアカウントで `firebase login` し直す**か、オーナーに **smilelink000 を編集者で IAM 追加**してもらう |
+
+| 症状                                                                                          | 対処                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Invalid project selection` / Secret の **403**（`serviceUsageConsumer`）                      | CLI の Google アカウントがそのプロジェクトの IAM にいない。**App Hosting を作ったアカウントで `firebase login` し直す**か、オーナーに **smilelink000 を編集者で IAM 追加**してもらう                                                                                                                                                                                               |
 | Cloud Build で `fah/misconfigured-secret` / `Permission 'secretmanager.versions.get' denied` | ① `apphosting:secrets:set` と `grantaccess --backend at-doctor` を実行済みか確認。② `apphosting.yaml` の `secret` を `projects/<プロジェクト番号>/secrets/OPENAI_API_KEY` 形式にする（本リポジトリは番号 `88086403893`）。③ それでも失敗する場合は **Cloud Build SA** と **Firebase App Hosting SA** にシークレット単位で `secretAccessor` を手動付与（上記 Step 4 の補足）。Console の環境変数に平文でキーを入れない |
-| `npm ci` が `package-lock.json` と不整合（`Missing: @emnapi/...`） | ローカルで `npm install` して lock を更新し、`main` に push する（Linux 用 optional 依存が lock に含まれる必要がある） |
-| ビルドが古いコミット（例: `19408d4`）のまま | App Hosting が参照する GitHub の `main` に最新コミットが載っているか確認し、`git push` 先の remote がそのリポジトリと一致しているか確認 |
-| ビルドが「OPENAI_API_KEY が見つからない」で失敗 | Secret 登録 + grantaccess を再実行。`availability: RUNTIME` だけのため、ビルド時は不要 |
-| OpenAI Images API が `invalid_image_file` | サーバー側で `sharp` による正規化済み。`failOn: "none"` も入っているので、別の画像で再現するか確認 |
-| シェアカード生成で 500（"font url"系） | Google Fonts API のレスポンス形式変更の可能性。`lib/share-card/fonts.ts` の regex を確認 |
-| ヘルスチェックは通るが画面が真っ白 | `NEXT_PUBLIC_APP_URL` の値が間違っている可能性。`apphosting.yaml` の URL を本番 URL に揃える |
-| Cold start が辛い | `apphosting.yaml` の `runConfig.minInstances: 1` に上げると常時 1 台暖機（コスト増） |
+| `npm ci` が `package-lock.json` と不整合（`Missing: @emnapi/...`）                                 | ローカルで `npm install` して lock を更新し、`main` に push する（Linux 用 optional 依存が lock に含まれる必要がある）                                                                                                                                                                                                                                       |
+| ビルドが古いコミット（例: `19408d4`）のまま                                                                 | App Hosting が参照する GitHub の `main` に最新コミットが載っているか確認し、`git push` 先の remote がそのリポジトリと一致しているか確認                                                                                                                                                                                                                                   |
+| ビルドが「OPENAI_API_KEY が見つからない」で失敗                                                             | Secret 登録 + grantaccess を再実行。`availability: RUNTIME` だけのため、ビルド時は不要                                                                                                                                                                                                                                                            |
+| OpenAI Images API が `invalid_image_file`                                                    | サーバー側で `sharp` による正規化済み。`failOn: "none"` も入っているので、別の画像で再現するか確認                                                                                                                                                                                                                                                                |
+| シェアカード生成で 500（"font url"系）                                                                  | Google Fonts API のレスポンス形式変更の可能性。`lib/share-card/fonts.ts` の regex を確認                                                                                                                                                                                                                                                         |
+| ヘルスチェックは通るが画面が真っ白                                                                           | `NEXT_PUBLIC_APP_URL` の値が間違っている可能性。`apphosting.yaml` の URL を本番 URL に揃える                                                                                                                                                                                                                                                       |
+| Cold start が辛い                                                                              | `apphosting.yaml` の `runConfig.minInstances: 1` に上げると常時 1 台暖機（コスト増）                                                                                                                                                                                                                                                           |
+
 
 ## OGP / SNS シェア
 
@@ -180,7 +188,8 @@ T-06 で生成するシェアカードは、現状 `POST /api/share-card` でク
 
 ## リファレンス
 
-- 要件定義書 §8 運用要件
-- Firebase App Hosting: <https://firebase.google.com/docs/app-hosting>
-- App Hosting Configuration: <https://firebase.google.com/docs/app-hosting/configure>
-- Secret Manager: <https://cloud.google.com/secret-manager>
+- requirements.md §8 運用要件
+- Firebase App Hosting: [https://firebase.google.com/docs/app-hosting](https://firebase.google.com/docs/app-hosting)
+- App Hosting Configuration: [https://firebase.google.com/docs/app-hosting/configure](https://firebase.google.com/docs/app-hosting/configure)
+- Secret Manager: [https://cloud.google.com/secret-manager](https://cloud.google.com/secret-manager)
+

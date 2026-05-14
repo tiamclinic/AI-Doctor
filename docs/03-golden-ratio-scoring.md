@@ -116,4 +116,4 @@ const WEIGHTS: Record<MetricKey, number> = {
 
 ## リファレンス
 
-- 要件定義書 §4.3 F-03
+- requirements.md §4.3 F-03

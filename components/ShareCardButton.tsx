@@ -6,6 +6,7 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import type { DiagnoseResponse } from "@/lib/diagnosis/types";
 import type { ScoreResult } from "@/lib/faceAnalysis/scoring";
+import { trackEvent } from "@/lib/analytics/track";
 import {
   buildShareCardRequest,
   requestShareCard,
@@ -50,10 +51,12 @@ export function ShareCardButton({
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(URL.createObjectURL(res.blob));
     setStatus("ready");
-  }, [score, diagnosis, previewUrl]);
+    void trackEvent("share_card_generated", { result_id: resultId });
+  }, [score, diagnosis, previewUrl, resultId]);
 
   const download = React.useCallback(() => {
     if (!blobRef.current) return;
+    void trackEvent("share_clicked", { channel: "share_card_png" });
     triggerDownload(blobRef.current, `tiam-share-${resultId}.png`);
   }, [resultId]);
 

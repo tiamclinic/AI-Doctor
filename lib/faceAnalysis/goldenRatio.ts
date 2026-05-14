@@ -1,5 +1,5 @@
 // 黄金比スコアリングを行うための関数
-import { PHI, TIAM_LANDMARK_INDEX } from "@/lib/faceAnalysis/landmarks";
+import { PHI, pickForeheadTopLandmark, TIAM_LANDMARK_INDEX } from "@/lib/faceAnalysis/landmarks";
 import type { Landmark } from "@/lib/faceAnalysis/types";
 
 // 指標のキーを管理するための型
@@ -58,8 +58,9 @@ export function computeRawMetrics(landmarks: Landmark[]): RawMetrics {
   const idx = TIAM_LANDMARK_INDEX;
   const p = (i: number) => requirePoint(landmarks, i);
 
-  // --- 縦三分割: 顔の縦方向を 3 等分する 4 点（髪生え際 / 眉間 / 鼻下 / 顎先）---
-  const top = p(idx.hairline);
+  // --- 縦三分割: 顔の縦方向を 3 等分する 4 点（額上端 / 眉間 / 鼻下 / 顎先）---
+  // 額上端は複数候補から最も上の点を採用（生え際の見え方に寄せる）
+  const top = pickForeheadTopLandmark(landmarks);
   const brow = p(idx.glabella);
   const nasal = p(idx.subnasale);
   const chin = p(idx.chin);

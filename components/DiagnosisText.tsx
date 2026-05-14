@@ -7,9 +7,14 @@ import type { DiagnoseResponse } from "@/lib/diagnosis/types";
 export function DiagnosisText({ result }: { result: DiagnoseResponse }) {
   return (
     <article className="border-border/60 bg-card flex flex-col gap-6 rounded-xl border p-6 shadow-sm">
-      <header className="text-muted-foreground flex items-center gap-2 text-xs tracking-wide">
-        <Sparkles className="text-tiam-gold size-3.5" />
-        TIAM AI 診断レポート
+      <header className="text-muted-foreground flex flex-col gap-1 text-xs tracking-wide">
+        <div className="flex items-center gap-2">
+          <Sparkles className="text-tiam-gold size-3.5 shrink-0" />
+          <span>TIAM AI 診断レポート</span>
+        </div>
+        <p className="text-[10px] leading-relaxed">
+          出典: TIAM 独自 AI。院方のコメントは別枠（今後追加）で併記予定です。
+        </p>
       </header>
 
       <section>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
 
+import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import {
@@ -64,7 +65,9 @@ export default function RootLayout({
         className={`${fontSans.className} bg-background text-foreground flex min-h-full flex-col`}
       >
         <Header />
-        <div className="flex flex-1 flex-col">{children}</div>
+        <AnalyticsProvider>
+          <div className="flex flex-1 flex-col">{children}</div>
+        </AnalyticsProvider>
         <Footer />
       </body>
     </html>

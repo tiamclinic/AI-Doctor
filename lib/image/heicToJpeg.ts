@@ -1,8 +1,9 @@
+// HEIC を JPEG に変換するための関数
 export async function heicToJpegFile(
   file: File,
   quality = 0.92,
 ): Promise<File> {
-  const { default: heic2any } = await import("heic2any");
+  const { default: heic2any } = await import("heic2any"); // heic2any を動的 import
 
   const converted = await heic2any({
     blob: file,

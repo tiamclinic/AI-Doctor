@@ -100,5 +100,5 @@ type DiagnoseResponse = {
 
 ## リファレンス
 
-- 要件定義書 §4.4 F-04
+- requirements.md §4.4 F-04
 - OpenAI JSON mode: https://platform.openai.com/docs/guides/structured-outputs

@@ -4,6 +4,7 @@ import { Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/lib/analytics/track";
 import {
   hasOpenAiPortraitConsent,
   subscribeConsent,
@@ -54,6 +55,9 @@ export function IdealPortrait({ photoDataUrl, score }: IdealPortraitProps) {
     if (res.ok) {
       setIdealPortrait(res.data);
       setStatus("success");
+      void trackEvent("portrait_generated", {
+        duration_ms: Math.round(elapsed),
+      });
     } else {
       setError(res.error.message);
       setStatus("error");

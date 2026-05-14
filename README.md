@@ -1,6 +1,14 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-要件定義・開発チケットは [`docs/INDEX.md`](./docs/INDEX.md) から辿れます。
+## ドキュメント
+
+- 開発者向けの全体エントリポイント: [`docs/README.md`](./docs/README.md)
+  - API リファレンス: [`docs/api/`](./docs/api/README.md)
+  - アーキテクチャ: [`docs/architecture/`](./docs/architecture/README.md)
+  - 機能仕様: [`docs/features/`](./docs/features/README.md)
+  - 開発・運用ガイド: [`docs/guides/`](./docs/guides/README.md)
+- 親要件定義: [`docs/requirements.md`](./docs/requirements.md)
+- MVP 開発チケット履歴: [`docs/INDEX.md`](./docs/INDEX.md)
 
 ## Getting Started
 

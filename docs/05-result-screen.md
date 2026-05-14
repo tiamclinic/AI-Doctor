@@ -84,4 +84,4 @@ components/
 
 ## リファレンス
 
-- 要件定義書 §4.5 F-05
+- requirements.md §4.5 F-05

@@ -5,6 +5,7 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 
 import { ConsentDialog, type ConsentResult } from "@/components/common/ConsentDialog";
+import { trackEvent } from "@/lib/analytics/track";
 import { notifyConsentChanged } from "@/lib/consent";
 
 type LandingCtaProps = {
@@ -24,6 +25,9 @@ export function LandingCta({ onConsentComplete }: LandingCtaProps) {
         }),
       );
       notifyConsentChanged();
+      void trackEvent("terms_consent", {
+        openai_portrait: result.openAiPortraitAccepted,
+      });
     }
     onConsentComplete?.();
   };

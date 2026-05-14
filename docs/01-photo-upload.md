@@ -63,4 +63,4 @@ type PhotoUploaderProps = {
 
 ## リファレンス
 
-- 要件定義書 §4.1 F-01
+- requirements.md §4.1 F-01

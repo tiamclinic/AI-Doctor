@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useFaceLandmarker } from "@/hooks/useFaceLandmarker";
+import { trackEvent } from "@/lib/analytics/track";
 import { requestDiagnosis } from "@/lib/diagnosis/client";
 import { computeScore } from "@/lib/faceAnalysis/scoring";
 import { useDiagnosisStore } from "@/lib/store/diagnosis-store";
@@ -43,6 +44,7 @@ export default function DiagnosePage() {
     null,
   );
   const triggeredRef = React.useRef(false);
+  const faceDetectedLoggedRef = React.useRef(false);
 
   React.useEffect(() => {
     if (!photoDataUrl) {
@@ -60,8 +62,20 @@ export default function DiagnosePage() {
     });
   }, [photoDataUrl, detectResult, detect, setDetectResult]);
 
+  React.useEffect(() => {
+    const active = detectResult ?? result;
+    const ok = status === "success" || (!!detectResult && status !== "error");
+    if (!ok || !active?.landmarks?.length || faceDetectedLoggedRef.current) return;
+    faceDetectedLoggedRef.current = true;
+    void trackEvent("face_detected", {
+      landmark_count: active.landmarks.length,
+      duration_ms: Math.round(active.durationMs),
+    });
+  }, [detectResult, result, status]);
+
   const retry = React.useCallback(() => {
     if (!photoDataUrl) return;
+    faceDetectedLoggedRef.current = false;
     setScoreError(null);
     setScoreResult(null);
     setDiagnosisText(null);
@@ -116,6 +130,10 @@ export default function DiagnosePage() {
     if (res.ok) {
       setDiagnosisText(res.data);
       setDiagnosisStatus("success");
+      void trackEvent("diagnosis_completed", {
+        total_score: scoreResult.totalScore,
+        duration_ms: Math.round(elapsed),
+      });
       // 診断完了したら自動的に結果画面へ遷移する
       const id = useDiagnosisStore.getState().resultId;
       if (id) {

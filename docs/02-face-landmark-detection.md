@@ -48,7 +48,7 @@ components/
 
 ### モデル / WASM 配布
 
-- モデル `public/models/face_landmarker.task`: `https://storage.googleapis.com/mediapipe-models/.../face_landmarker.task` から取得（要件定義書 §1.2）
+- モデル `public/models/face_landmarker.task`: `https://storage.googleapis.com/mediapipe-models/.../face_landmarker.task` から取得（requirements.md §1.2）
 - WASM 一式は `node_modules/@mediapipe/tasks-vision/wasm` から `public/mediapipe/wasm/` に `postinstall` で自動コピー
 - 合計 ~30 MB のため `public/mediapipe/` は `.gitignore`、必要なら CDN 配布 or App Hosting 静的バケットに移行
 
@@ -86,5 +86,5 @@ async function detectFace(image: HTMLImageElement | ImageBitmap): Promise<Detect
 
 ## リファレンス
 
-- 要件定義書 §4.2 F-02
+- requirements.md §4.2 F-02
 - MediaPipe Face Landmarker: https://developers.google.com/mediapipe/solutions/vision/face_landmarker/web_js
