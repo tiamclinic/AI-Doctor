@@ -26,11 +26,18 @@ TIAM Beauty AI 診断 MVP のチケット（タスク）一覧です。各ファ
 | 08  | [SNS シェア](./08-sns-share.md)                                         | F-08     | 中     | 完了       | 06         |
 | 09  | [Firebase デプロイ](./09-deploy.md)                                     | -        | 高     | 完了       | 01–08      |
 | 10  | [QA・リーガル・ベータ公開](./10-qa-release.md)                          | -        | 高     | 未着手     | 09         |
+| 11  | [結果画面モック準拠 UI](./11-result-mock-ui.md)                         | §4.9 F-05 | 高     | 未着手     | 05         |
+| 12  | [AI 診断ガードレール（施術名禁止）](./12-ai-diagnosis-guardrails.md)     | §4.9.1 F-04 | 高   | 未着手     | 04         |
+| 13  | [ドクター記述データモデル＆API](./13-doctor-content-model-api.md)       | §4.9.2   | 高     | 未着手     | 09         |
+| 14  | [ドクター向け管理画面](./14-doctor-admin-cms.md)                        | §4.9.2   | 中     | 未着手     | 13         |
+| 15  | [院方コンテンツ併用表示](./15-result-doctor-merged-display.md)          | §4.9.1–4 | 高     | 未着手     | 11, 13     |
+| 16  | [診断レポート印刷／PDF](./16-report-print-pdf.md)                       | §4.9.3   | 中     | 未着手     | 15         |
+| 17  | [来院者限定アクセス](./17-clinic-access-restrictions.md)              | §1.5     | 中     | 未着手     | 09         |
 
 ## 進捗サマリ
 
-- 完了: 10 / 11
-- 進行中: 0 / 11
+- 完了: 10 / 18
+- 進行中: 0 / 18
 
 ## 依存関係（ガント概要）
 
@@ -55,7 +62,17 @@ gantt
     Firebase デプロイ       :a9, after a7, 2d
     section W5
     QA・リーガル・公開      :a10, after a9, 4d
+    section Phase1.5（要件 0.2）
+    結果モックUI T11      :b11, after a10, 5d
+    AIガード T12          :b12, after a4, 2d
+    院方データAPI T13     :b13, after a9, 5d
+    管理画面 T14          :b14, after b13, 8d
+    併用表示 T15          :b15, after b11, 4d
+    印刷PDF T16           :b16, after b15, 4d
+    来院者限定 T17        :b17, after a9, 7d
 ```
+
+※ Phase 1.5 のガントは目安。T-12 は T-04 完了後いつでも着手可。
 
 ## 運用ルール
 
