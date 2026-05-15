@@ -20,18 +20,22 @@ const METRIC_ORDER = [
   "verticalThirds",
   "horizontalFifths",
   "eyeSpacing",
+  "eyePosition",
   "noseMouthRatio",
   "eLine",
   "faceContour",
+  "bilateralSymmetry",
 ] as const;
 
 const METRIC_LABEL: Record<(typeof METRIC_ORDER)[number], string> = {
   verticalThirds: "縦三分割",
   horizontalFifths: "横五分割",
   eyeSpacing: "目間",
+  eyePosition: "目の縦位置",
   noseMouthRatio: "鼻口比",
   eLine: "Eライン",
   faceContour: "顔輪郭",
+  bilateralSymmetry: "左右対称",
 };
 
 // テンプレで描画する全文字列を集約。フォントサブセット生成のために使う。
@@ -46,9 +50,9 @@ const STATIC_TEMPLATE_TEXT = [
   "TIAM バランス指数",
   "/ 100",
   // レーダーチャート見出し
-  "6 大指標バランス",
+  "TIAM指標バランス",
   // METRIC_LABEL の全項目
-  "縦三分割横五分割目間鼻口比Eライン顔輪郭",
+  "縦三分割横五分割目間目の縦位置鼻口比Eライン顔輪郭左右対称",
   // フッター注意書き / コピーライト（句読点・記号も含む）
   "※ 美容バランスの傾向を読み解く参考情報であり、医療診断ではありません。",
   "© TIAM Beauty Lab",
@@ -363,7 +367,7 @@ export function ShareCardTemplate({ data }: { data: ShareCardRequest }) {
             fontFamily: "'Cormorant Garamond', serif",
           }}
         >
-          6 大指標バランス
+          TIAM指標バランス
         </span>
         <div style={{ marginTop: 12, display: "flex" }}>
           <RadarWithLabels scores={data.scores} size={660} />

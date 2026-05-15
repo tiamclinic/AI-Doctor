@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 
+import { PartAnalysisIcon } from "@/components/result/PartAnalysisIcon";
 import type { PartId } from "@/lib/result/parts";
 
 type PartAnalysisCardProps = {
@@ -27,9 +28,19 @@ export function PartAnalysisCard({
       data-part-id={partId}
       className="border-border/60 bg-card flex h-full flex-col rounded-xl border p-5 shadow-sm"
     >
-      <header className="border-tiam-gold/40 flex items-baseline justify-between gap-2 border-b pb-2">
-        <h3 className="font-heading text-tiam-primary text-sm tracking-tight">{title}</h3>
-        <span className="text-tiam-gold font-heading text-lg tabular-nums tracking-tight">
+      <header className="border-tiam-gold/40 flex items-center gap-3 border-b pb-3">
+        <div
+          className="border-tiam-gold/50 bg-tiam-gold/8 flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border"
+          aria-hidden
+        >
+          <PartAnalysisIcon partId={partId} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-heading text-tiam-primary text-sm tracking-tight">
+            {title}
+          </h3>
+        </div>
+        <span className="text-tiam-gold font-heading shrink-0 text-lg tabular-nums tracking-tight">
           {score.toFixed(1)}
         </span>
       </header>

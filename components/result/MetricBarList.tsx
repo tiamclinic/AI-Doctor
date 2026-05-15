@@ -8,9 +8,11 @@ const METRIC_ORDER: MetricKey[] = [
   "verticalThirds",
   "horizontalFifths",
   "eyeSpacing",
+  "eyePosition",
   "noseMouthRatio",
   "eLine",
   "faceContour",
+  "bilateralSymmetry",
 ];
 
 /** モック準拠の短いラベル + 理想値（カッコ内） */
@@ -18,9 +20,11 @@ const METRIC_LINE_LABELS: Record<MetricKey, { name: string; ideal: string }> = {
   verticalThirds: { name: "縦の比率", ideal: "1 : 1 : 1" },
   horizontalFifths: { name: "横の比率", ideal: "1 : 1 : 1 : 1 : 1" },
   eyeSpacing: { name: "目の間隔", ideal: "目幅と同等" },
+  eyePosition: { name: "目の縦位置", ideal: "顔長の約半分（目帯）" },
   noseMouthRatio: { name: "鼻口比率", ideal: `1 : ${PHI.toFixed(3)}` },
   eLine: { name: "Eライン整合度", ideal: "鼻先 — 顎先 軸上" },
   faceContour: { name: "顔の輪郭比", ideal: "1 : 1.46" },
+  bilateralSymmetry: { name: "左右対称性", ideal: "左右差が小さい" },
 };
 
 type MetricBarListProps = {

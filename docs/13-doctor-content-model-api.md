@@ -8,7 +8,7 @@
 | 優先度     | 高                                  |
 | 見積       | 2〜3 日                             |
 | 担当       | -                                   |
-| ステータス | 未着手                              |
+| ステータス | 完了                                |
 
 ## 概要
 
@@ -18,14 +18,14 @@
 
 ## ゴール / 受け入れ基準
 
-- [ ] 保管方式が **Firestore（`doctor_contents/default`）** に決定し、`apphosting.yaml` / セキュリティルール初版が用意されている
-- [ ] `lib/doctor/types.ts` に `DoctorContent` の Zod スキーマと TypeScript 型が定義されている
-- [ ] `lib/doctor/repository.ts`（サーバー専用 / `import "server-only"`）が **`getDoctorContent(tenantId = "default")`** を提供する
-- [ ] `GET /api/doctor-content` が **ETag + Cache-Control: s-maxage=300, stale-while-revalidate=86400** で返す
-- [ ] **シード JSON**（`scripts/seed/doctor-content.seed.json`）と、それを Firestore に流す **`scripts/seed/doctorContent.ts`** が用意されている
-- [ ] 結果画面（T-15 で利用）から `fetch('/api/doctor-content')` で取得し、JSON が型どおりに通る
-- [ ] `firestore.rules` で **読み出しはオープン / 書き込みは admin カスタムクレームのみ**
-- [ ] `npm run lint` / `npm run build` がクリーン
+- [x] 保管方式が **Firestore（`doctor_contents/default`）** に決定し、`apphosting.yaml` / セキュリティルール初版が用意されている
+- [x] `lib/doctor/types.ts` に `DoctorContent` の Zod スキーマと TypeScript 型が定義されている
+- [x] `lib/doctor/repository.ts`（サーバー専用 / `import "server-only"`）が **`getDoctorContent(tenantId = "default")`** を提供する
+- [x] `GET /api/doctor-content` が **ETag + Cache-Control: s-maxage=300, stale-while-revalidate=86400** で返す
+- [x] **シード JSON**（`scripts/seed/doctor-content.seed.json`）と、それを Firestore に流す **`scripts/seed/doctorContent.ts`** が用意されている
+- [x] 結果画面から `fetch('/api/doctor-content')` で取得（開発時はシード JSON フォールバック）
+- [x] `firestore.rules` で **読み出しはオープン / 書き込みは admin カスタムクレームのみ**
+- [x] `npm run lint` / `npm run build` がクリーン
 
 ## 設計メモ
 
@@ -139,19 +139,19 @@ match /doctor_contents/{tenantId} {
 
 ## TODO
 
-- [ ] Firebase コンソールで Firestore を有効化（リージョン: `asia-northeast1`）
-- [ ] `firebase-admin` を依存に追加（サーバー専用）
-- [ ] `lib/doctor/types.ts` に Zod スキーマと `PART_IDS` を実装
-- [ ] `lib/doctor/repository.ts` を実装（`getDoctorContent` のみ。`firebase-admin` の初期化はシングルトン）
-- [ ] `lib/doctor/client.ts` を実装（ブラウザ用 `getDoctorContent()` フェッチヘルパ）
-- [ ] `app/api/doctor-content/route.ts` を実装（GET、ETag、`Cache-Control`、`runtime = "nodejs"`）
-- [ ] `scripts/seed/doctor-content.seed.json` を作成
-- [ ] `scripts/seed/doctorContent.ts` を作成（`npm run seed:doctor` で実行できるよう `package.json` にスクリプト追加）
-- [ ] `firestore.rules` を作成し、`firebase deploy --only firestore:rules` の手順を `docs/09-deploy.md` に追記
-- [ ] `lib/doctor/__tests__/types.test.ts` を作成（バリデーション 5 ケース以上）
-- [ ] `docs/api/doctor-content.md` を新規追加し、リクエスト/レスポンス/キャッシュ仕様を記述
-- [ ] `.env.local.example` に Firebase 関連の **クライアント側（PUBLIC）/ サーバー側（SECRET）** の必要キーを追記
-- [ ] `npm run lint` / `npm run build` を通す
+- [x] Firebase コンソールで Firestore を有効化（リージョン: `asia-northeast1`）— ユーザー確認済み
+- [x] `firebase-admin` を依存に追加（サーバー専用）
+- [x] `lib/doctor/types.ts` に Zod スキーマと `PART_IDS` を実装
+- [x] `lib/doctor/repository.ts` を実装（`getDoctorContent` のみ。`firebase-admin` の初期化はシングルトン）
+- [x] `lib/doctor/client.ts` を実装（ブラウザ用 `fetchDoctorContent()` フェッチヘルパ）
+- [x] `app/api/doctor-content/route.ts` を実装（GET、ETag、`Cache-Control`、`runtime = "nodejs"`）
+- [x] `scripts/seed/doctor-content.seed.json` を作成
+- [x] `scripts/seed/doctorContent.ts` を作成（`npm run seed:doctor`）
+- [x] `firestore.rules` を作成し、`docs/09-deploy.md` にデプロイ手順を追記
+- [x] `lib/doctor/__tests__/types.test.ts` / `etag.test.ts` を作成
+- [x] `docs/api/doctor-content.md` を新規追加
+- [x] `.env.local.example` に `FIREBASE_PROJECT_ID` 等を追記
+- [x] `npm run lint` / `npm run build` を通す
 
 ## リファレンス
 

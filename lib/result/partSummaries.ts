@@ -53,7 +53,7 @@ export function getPartSummary(result: ScoreResult, partId: PartId): string {
 export function getHeroSummaryLine(totalScore: number): string {
   const b = bandFromScore(totalScore);
   const lines: Record<Band, string> = {
-    high: "6 大指標のバランスがまとまりやすく、TIAM バランス指数は高めの傾向です。",
+    high: "主要指標のバランスがまとまりやすく、TIAM バランス指数は高めの傾向です。",
     mid: "全体のバランスに余白があり、整え方の余地が出やすいタイプです。",
     low: "個性が出やすい比率です。パーツごとのケアでまとまりを高めやすくなります。",
   };

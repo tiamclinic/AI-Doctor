@@ -19,6 +19,7 @@ import { heicToJpegFile } from "@/lib/image/heicToJpeg";
 import { readFileAsDataURL } from "@/lib/image/readDataUrl";
 import { isHeicLike, validateImageFile } from "@/lib/image/validate";
 import { useDiagnosisStore } from "@/lib/store/diagnosis-store";
+import { cn } from "@/lib/utils";
 
 export type PhotoUploaderProps = {
   onSelect: (file: File, dataUrl: string) => void;
@@ -133,7 +134,12 @@ export function PhotoUploader({
   };
 
   return (
-    <Card className="border-border/80 w-full max-w-xl shadow-sm">
+    <Card
+      className={cn(
+        "border-border/80 w-full shadow-sm",
+        source && !cropped ? "max-w-4xl" : "max-w-xl",
+      )}
+    >
       <CardHeader className="text-left">
         <CardTitle className="font-heading text-xl">顔写真をアップロード</CardTitle>
         <CardDescription>

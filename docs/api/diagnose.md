@@ -1,6 +1,6 @@
 # POST /api/diagnose
 
-6 大指標スコアから AI 診断文（JSON）を生成するエンドポイントです。
+TIAM 指標スコア（現状 8 項目）から AI 診断文（JSON）を生成するエンドポイントです。
 **写真データは送信しません**。ブラウザで算出したスコアのみが渡ります。
 
 - 実装: [`app/api/diagnose/route.ts`](../../app/api/diagnose/route.ts)
@@ -29,9 +29,11 @@ type DiagnoseRequest = {
     verticalThirds: number;      // 0–100  縦三分割バランス
     horizontalFifths: number;    // 0–100  横五分割バランス
     eyeSpacing: number;          // 0–100  目間バランス
+    eyePosition: number;         // 0–100  目の位置（縦）
     noseMouthRatio: number;      // 0–100  鼻口比率
     eLine: number;               // 0–100  E ライン整合度
     faceContour: number;         // 0–100  顔輪郭比率
+    bilateralSymmetry: number;     // 0–100  左右対称性
   };
   locale?: "ja";                 // default: "ja"
 };
@@ -76,8 +78,20 @@ type DiagnoseResponse = {
 ## サーバー側ガード
 
 1. **JSON Schema strict** で OpenAI 出力フィールドを固定
-2. **薬機法フレーズの自動置換**: 「治療」「改善されます」などを「ケア」「整いやすくなります」へ正規表現で置換（[`lib/prompt/forbiddenWords.ts`](../../lib/prompt/forbiddenWords.ts)）
-3. **禁止フレーズスキャン + 1 度だけリトライ**: 「いかがでしょうか」など GPT 頻出フレーズや「No.1」等の最上級表現を検知したら、書き直しを指示して再生成
+2. **薬機法フレーズの自動置換**: 「治療」「改善されます」などを「ケア」「整いやすくなります」へ正規表現で置換（[`lib/prompt/forbiddenWords.ts`](../../lib/prompt/forbiddenWords.ts) の `MEDICAL_TERM_REPLACEMENTS`）
+3. **禁止語スキャン**（[`scanForbidden`](../../lib/prompt/forbiddenWords.ts)）: GPT 頻出フレーズ、景表法上の最上級語、**美容医療の施術・機器・薬剤名**（`MEDICAL_PROCEDURE_TERMS`）を検出
+4. **1 回までリトライ**: 検出時は違反語を列挙して書き直し指示（[`buildRetryMessage`](../../lib/prompt/diagnosisPrompt.ts)）
+5. **2 回目も違反時**: `maskProcedureTerms` / `maskDiagnoseResponse` で施術語を「美容バランスの整え方」へ置換し、必要に応じてヒット除去と長さ補正後に返却（[`lib/diagnosis/openai.ts`](../../lib/diagnosis/openai.ts) の `applyCompliancePipeline`）
+
+### レスポンスヘッダ（サーバー／ログ用）
+
+成功時 `200` の JSON 本体は従来どおり `DiagnoseResponse` のみです。ガードの通過経路は次のヘッダで区別できます（クライアント実装で読む必要はありません）。
+
+| ヘッダ | 値 | 意味 |
+| --- | --- | --- |
+| `x-diagnose-guardrail` | `clean` | 初回生成がスキャンを通過 |
+| | `retried` | 1 回リトライ後にスキャンを通過 |
+| | `masked` | リトライ失敗または 2 回目も違反のためマスク・補正パイプラインを適用 |
 
 ## 呼び出し例（クライアント）
 

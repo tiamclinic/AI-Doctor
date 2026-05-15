@@ -42,8 +42,10 @@ export async function POST(req: NextRequest) { // POST リクエストを処理
   }
 
   try {
-    const result = await generateDiagnosis(parsed.data);
-    return NextResponse.json(result, { status: 200 });
+    const { response: result, guardrail } = await generateDiagnosis(parsed.data);
+    const res = NextResponse.json(result, { status: 200 });
+    res.headers.set("x-diagnose-guardrail", guardrail);
+    return res;
   } catch (e) {
     if (e instanceof OpenAiNotConfiguredError) {
       return errorResponse(503, "service_unavailable", e.message);

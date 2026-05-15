@@ -33,6 +33,16 @@ export const TIAM_LANDMARK_INDEX = {
   lowerLipBottom: 17, // 下唇下端の中央
 } as const;
 
+/** 左右対称性（T-18）で比較する左右対応点。キーは MediaPipe の right / left 命名に従う。 */
+export const TIAM_BILATERAL_POINT_PAIRS = [
+  ["rightEyeOuter", "leftEyeOuter"],
+  ["rightEyeInner", "leftEyeInner"],
+  ["rightAla", "leftAla"],
+  ["rightMouthCorner", "leftMouthCorner"],
+] as const satisfies ReadonlyArray<
+  readonly [keyof typeof TIAM_LANDMARK_INDEX, keyof typeof TIAM_LANDMARK_INDEX]
+>;
+
 export type TiamLandmarkIndex = (typeof TIAM_LANDMARK_INDEX)[keyof typeof TIAM_LANDMARK_INDEX];
 
 /**

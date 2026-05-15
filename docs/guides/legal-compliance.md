@@ -29,6 +29,7 @@
 
 - `FORBIDDEN_PHRASES`: GPT 頻出のぼかし表現（「いかがでしょうか」「素晴らしい」など）
 - `SUPERLATIVE_PHRASES`: 最上級表現（「最も美しい」「No.1」など）
+- `MEDICAL_PROCEDURE_TERMS`: 美容医療の施術・機器・薬剤名（AI 出力禁止・初版リスト）
 - `MEDICAL_TERM_REPLACEMENTS`: 医療系断定表現の置換ルール（順序依存）
 
 ### 2. プロンプトでの明示
@@ -46,12 +47,15 @@
 ```
 OpenAI 応答
   ↓ replaceMedicalTerms()  ← 医療表現を強制置換
-  ↓ scanForbidden()        ← 禁止フレーズ検出
-  ↓ 検出されたら 1 回だけリトライ（「これらを避けて書き直して」と system 指示）
-  ↓ それでも残ったら、置換済みの 1 回目を返却
+  ↓ scanForbidden()        ← 禁止フレーズ・最上級・施術名を検出
+  ↓ 検出されたら 1 回だけリトライ（違反語を列挙し JSON を書き直し指示）
+  ↓ 2 回目も違反、またはリトライ API 失敗時
+      maskDiagnoseResponse → replaceMedicalTerms を再適用
+      → なお残るヒットを文字列から除去 → 長さを Zod 最小に合わせて補正
+  ↓ レスポンスヘッダ x-diagnose-guardrail: clean | retried | masked
 ```
 
-これによって LLM の「ゆらぎ」によって禁止表現が出ても **少なくとも医療表現は除去された状態** で返却されることを保証している。
+これによって LLM のゆらぎで禁止表現や施術名が出ても、**返却前に除去・マスクされる**ことを目指しています（最終リストはリーガル確認前提）。
 
 ### 4. UI 表記
 

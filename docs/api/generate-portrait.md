@@ -32,9 +32,11 @@ type PortraitRequest = {
     verticalThirds: number;      // 0–100
     horizontalFifths: number;
     eyeSpacing: number;
+    eyePosition: number;
     noseMouthRatio: number;
     eLine: number;
     faceContour: number;
+    bilateralSymmetry: number;
   };
   consent: true;                 // 必ず true。false / undefined は 400 で拒否
 };

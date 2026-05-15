@@ -14,21 +14,27 @@ const METRIC_INSTRUCTION: Record<MetricKey, string> = {
     "softly even out the horizontal proportions across the face mainly through gentle hairstyle volume and a faint side-cheek blush — avoid heavy western-style contouring",
   eyeSpacing:
     "make the spacing between the eyes feel closer to one eye-width using softer brow placement and a hint of cool highlight on the nose root — strictly do not move, enlarge, or reshape the eyes",
+  eyePosition:
+    "very subtly suggest the eye band sits near the mid vertical rhythm of the face using soft brow grooming and light forehead hair framing only — never shift, enlarge, or reshape the eyes",
   noseMouthRatio:
     "balance the visual nose-to-mouth width ratio toward 1:1.618 using a slightly defined lip outline in a sheer pink tone — no nose shadow sculpting, no nose narrowing",
   eLine:
     "guide upper and lower lip presence to feel aligned with the E-line via subtle lip tinting and a faint chin highlight — do not push the chin forward",
   faceContour:
     "refine the perceived face length-to-width balance toward 1:1.46 through hair volume on the sides and minimal cheekbone highlight — never slim the face shape itself",
+  bilateralSymmetry:
+    "gently balance perceived left-right harmony with even lighting, symmetric hair parting, and barely-there blush placement — do not mirror or warp facial features",
 };
 
 const METRIC_LABEL_EN: Record<MetricKey, string> = {
   verticalThirds: "vertical thirds",
   horizontalFifths: "horizontal fifths",
   eyeSpacing: "eye spacing",
+  eyePosition: "vertical eye position",
   noseMouthRatio: "nose-to-mouth ratio",
   eLine: "E-line alignment",
   faceContour: "face contour ratio",
+  bilateralSymmetry: "bilateral symmetry",
 };
 
 // 改善対象とする指標を「低い順 + 最大3つ」で選ぶ。

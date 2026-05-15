@@ -12,8 +12,9 @@ import {
   buildRetryMessage,
 } from "@/lib/prompt/diagnosisPrompt"; // 診断プロンプトを構築するための関数
 import {
+  maskDiagnoseResponse,
   replaceMedicalTerms,
-  scanForbidden, // 禁止フレーズを検出するための関数
+  scanForbidden,
 } from "@/lib/prompt/forbiddenWords";
 
 const MODEL = "gpt-4o-mini"; // モデル
@@ -66,15 +67,72 @@ function postprocess(json: DiagnoseResponse): DiagnoseResponse { // 診断レス
   };
 }
 
-function flattenForScan(json: DiagnoseResponse): string { // 診断レスポンスを平坦化
+function flattenForScan(json: DiagnoseResponse): string {
   return [
-    json.overallComment, // 総合コメントを平坦化
-    ...json.strengths, // 強みを平坦化
-    ...json.improvements, // 改善点を平坦化
-    ...json.recommendedCare, // 推奨ケアを平坦化
-    json.tiamMessage, // TIAM メッセージを平坦化
-  ].join("\n"); // 改行で結合
+    json.overallComment,
+    ...json.strengths,
+    ...json.improvements,
+    ...json.recommendedCare,
+    json.tiamMessage,
+  ].join("\n");
 }
+
+const FILL_SENTENCE =
+  "美容バランスの傾向を読み解く参考としてご覧ください。";
+
+function padToMin(s: string, min: number, max: number): string {
+  let t = s.trim();
+  while (t.length < min) {
+    t = t + FILL_SENTENCE;
+  }
+  return t.length > max ? t.slice(0, max) : t;
+}
+
+function redactHitsInDiagnosis(
+  json: DiagnoseResponse,
+  hits: string[],
+): DiagnoseResponse {
+  const uniq = [...new Set(hits)].filter(Boolean);
+  const fix = (s: string) => {
+    let t = s;
+    for (const h of uniq) {
+      t = t.split(h).join("");
+    }
+    return t.replace(/\s{2,}/g, " ").trim();
+  };
+  return {
+    overallComment: fix(json.overallComment),
+    strengths: json.strengths.map(fix),
+    improvements: json.improvements.map(fix),
+    recommendedCare: json.recommendedCare.map(fix),
+    tiamMessage: fix(json.tiamMessage),
+  };
+}
+
+function coerceDiagnosisShape(json: DiagnoseResponse): DiagnoseResponse {
+  return {
+    overallComment: padToMin(json.overallComment, 30, 300),
+    strengths: json.strengths.map((s) => padToMin(s, 8, 120)),
+    improvements: json.improvements.map((s) => padToMin(s, 8, 120)),
+    recommendedCare: json.recommendedCare.map((s) => padToMin(s, 8, 120)),
+    tiamMessage: padToMin(json.tiamMessage, 10, 120),
+  };
+}
+
+/** 施術語マスク＋残存ヒットの除去＋スキーマ整合 */
+function applyCompliancePipeline(postprocessed: DiagnoseResponse): DiagnoseResponse {
+  let out = maskDiagnoseResponse(postprocessed);
+  out = postprocess(out);
+  for (let i = 0; i < 8; i++) {
+    const scan = scanForbidden(flattenForScan(out));
+    if (scan.ok) break;
+    out = redactHitsInDiagnosis(out, scan.hits);
+    out = postprocess(out);
+  }
+  return DiagnoseResponseSchema.parse(coerceDiagnosisShape(out));
+}
+
+export type DiagnoseGuardrailState = "clean" | "retried" | "masked";
 
 async function callOnce(
   messages: ReturnType<typeof buildDiagnosisMessages>,
@@ -108,30 +166,40 @@ async function callOnce(
 
 export async function generateDiagnosis(
   input: DiagnoseRequest,
-): Promise<DiagnoseResponse> {
-  const baseMessages = buildDiagnosisMessages(input); // 診断プロンプトを構築
+): Promise<{ response: DiagnoseResponse; guardrail: DiagnoseGuardrailState }> {
+  const baseMessages = buildDiagnosisMessages(input);
 
-  const first = await callOnce(baseMessages); // 1 回目の診断レスポンスを取得
-  const firstProcessed = postprocess(first); // 診断レスポンスを後処理  医療表現を置換
-  const scan1 = scanForbidden(flattenForScan(firstProcessed)); // 禁止フレーズを検出
-  if (scan1.ok) return firstProcessed; // 禁止フレーズが含まれていない場合はそのまま返す
+  const first = await callOnce(baseMessages);
+  const firstProcessed = postprocess(first);
+  const scan1 = scanForbidden(flattenForScan(firstProcessed));
+  if (scan1.ok) {
+    return { response: firstProcessed, guardrail: "clean" };
+  }
 
-  // 1 度だけリトライ：禁止フレーズを伝えて書き直しを依頼する
   const retryMessages = [
-    ...baseMessages, // 診断プロンプトを追加
+    ...baseMessages,
     {
-      role: "assistant" as const, // アシスタントのロールを指定
-      content: JSON.stringify(first), // 1 回目の診断レスポンスを追加
+      role: "assistant" as const,
+      content: JSON.stringify(first),
     },
-    buildRetryMessage(scan1.hits), // 禁止フレーズを追加
+    buildRetryMessage(scan1.hits),
   ];
 
   try {
-    const second = await callOnce(retryMessages); // 2 回目の診断レスポンスを取得
-    const secondProcessed = postprocess(second); // 診断レスポンスを後処理  医療表現を置換  2 回目の診断レスポンスを返す
-    return secondProcessed; // 2 回目の診断レスポンスを返す
+    const second = await callOnce(retryMessages);
+    const secondProcessed = postprocess(second);
+    const scan2 = scanForbidden(flattenForScan(secondProcessed));
+    if (scan2.ok) {
+      return { response: secondProcessed, guardrail: "retried" };
+    }
+    return {
+      response: applyCompliancePipeline(secondProcessed),
+      guardrail: "masked",
+    };
   } catch {
-    // リトライに失敗したら、1 回目の結果（医療表現は置換済み）をそのまま返す
-    return firstProcessed; // 1 回目の診断レスポンスを返す
+    return {
+      response: applyCompliancePipeline(firstProcessed),
+      guardrail: "masked",
+    };
   }
 }

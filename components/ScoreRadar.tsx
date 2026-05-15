@@ -7,9 +7,11 @@ const METRIC_ORDER: MetricKey[] = [
   "verticalThirds",
   "horizontalFifths",
   "eyeSpacing",
+  "eyePosition",
   "noseMouthRatio",
   "eLine",
   "faceContour",
+  "bilateralSymmetry",
 ];
 
 type ScoreRadarProps = {
@@ -21,9 +23,11 @@ const SHORT_LABEL: Record<MetricKey, string> = {
   verticalThirds: "縦三分割",
   horizontalFifths: "横五分割",
   eyeSpacing: "目間",
+  eyePosition: "目の縦位置",
   noseMouthRatio: "鼻口比",
   eLine: "Eライン",
   faceContour: "顔輪郭比",
+  bilateralSymmetry: "左右対称",
 };
 
 export function ScoreRadar({ result, size = 320 }: ScoreRadarProps) {
@@ -44,7 +48,7 @@ export function ScoreRadar({ result, size = 320 }: ScoreRadarProps) {
   // 同心円（背景の目盛り）
   const grids = [0.25, 0.5, 0.75, 1];
 
-  // 6 角形の頂点を計算してパスにする
+  // 同心円（背景の目盛り）
   const polygon = (ratio: number) =>
     METRIC_ORDER.map((_, i) => point(i, ratio).join(",")).join(" ");
 
@@ -59,7 +63,7 @@ export function ScoreRadar({ result, size = 320 }: ScoreRadarProps) {
       height={size}
       viewBox={`0 0 ${size} ${size}`}
       role="img"
-      aria-label="6 大指標レーダーチャート"
+      aria-label="TIAM 指標レーダーチャート"
     >
       {grids.map((g) => (
         <polygon
@@ -132,7 +136,7 @@ export function ScoreRadar({ result, size = 320 }: ScoreRadarProps) {
         );
       })}
 
-      <title>{`6 指標レーダー: ${METRIC_ORDER.map(
+      <title>{`TIAM 指標レーダー: ${METRIC_ORDER.map(
         (k) => `${METRIC_LABELS[k]} ${result.scores[k].toFixed(1)}`,
       ).join(" / ")}`}</title>
     </svg>

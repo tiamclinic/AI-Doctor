@@ -8,7 +8,7 @@
 | 優先度     | 中〜高                              |
 | 見積       | 3〜4 日                             |
 | 担当       | -                                   |
-| ステータス | 未着手                              |
+| ステータス | 完了                                |
 
 ## 概要
 
@@ -18,15 +18,15 @@
 
 ## ゴール / 受け入れ基準
 
-- [ ] `/admin/login` でメール＋パスワードログインができる
-- [ ] **`admin` カスタムクレームが付いたユーザだけ** `/admin/doctor-content` にアクセスできる
-- [ ] パーツ別タブ（目 / 鼻 / 口 / 輪郭 / 左右対称性）でテキストエリア編集できる
-- [ ] 文字数カウンタ（最大 800 字）と禁止語警告（`scanForbidden` 流用）が表示される
-- [ ] **「プレビュー」ボタンで実際の結果画面のパーツカード見た目を確認できる**（モックスコアで合成）
-- [ ] **「公開」ボタンで Firestore `doctor_contents/default` を更新**し、`publishedAt` と `updatedAt`/`updatedBy` が記録される
-- [ ] 公開操作は **CSRF/再認証なしの直リンクで叩けない**（API 側でも ID トークン検証 + admin クレーム検証）
-- [ ] `/admin/*` は **`noindex` メタ**＋検索除外
-- [ ] `npm run lint` / `npm run build` がクリーン
+- [x] `/admin/login` でメール＋パスワードログインができる
+- [x] **`admin` カスタムクレームが付いたユーザだけ** `/admin/doctor-content` にアクセスできる
+- [x] パーツ別タブ（目 / 鼻 / 口 / 輪郭 / 左右対称性）でテキストエリア編集できる
+- [x] 文字数カウンタ（最大 800 字）と禁止語警告（`scanForbidden` 流用）が表示される
+- [x] **「プレビュー」ボタンで実際の結果画面のパーツカード見た目を確認できる**（モックスコアで合成）
+- [x] **「公開」ボタンで Firestore `doctor_contents/default` を更新**し、`publishedAt` と `updatedAt`/`updatedBy` が記録される
+- [x] 公開操作は **CSRF/再認証なしの直リンクで叩けない**（API 側でも ID トークン検証 + admin クレーム検証）
+- [x] `/admin/*` は **`noindex` メタ**＋検索除外
+- [x] `npm run lint` / `npm run build` がクリーン
 
 ## 設計メモ
 
@@ -90,23 +90,32 @@ npx ts-node scripts/admin/grantAdmin.ts <uid>
 - 禁止語ヒット時は赤バッジ＋ヒット語を脇に出す（保存はブロックしない、警告のみ）
 - 公開後 3 秒間 "公開しました（キャッシュ反映まで最大 5 分）" を表示
 
-## TODO
+## 運用手順（初回セットアップ）
 
-- [ ] Firebase Auth を有効化（メール＋パスワード）
-- [ ] `firebase` Web SDK を依存に追加（クライアント側、`NEXT_PUBLIC_FIREBASE_*` env を整える）
-- [ ] `lib/admin/firebaseClient.ts` を実装（シングルトン initApp）
-- [ ] `lib/admin/authGuard.ts` を実装（`verifyAdminFromIdToken(req)` を export）
-- [ ] `app/admin/layout.tsx` を実装（`<meta name="robots" content="noindex" />`、未ログインなら `/admin/login` へ）
-- [ ] `app/admin/login/page.tsx` を実装（メール＋パスワード、エラー時のメッセージ）
-- [ ] `app/admin/doctor-content/page.tsx` を実装（タブ + 編集 + プレビュー + 公開）
-- [ ] `components/admin/DoctorContentEditor.tsx` を実装（文字数カウンタ + 禁止語警告）
-- [ ] `components/admin/DoctorContentPreview.tsx` を実装（T-11 のカードを再利用）
-- [ ] `app/api/doctor-content/route.ts` に PUT を追加（admin 検証 + Zod + Firestore 書き込み）
-- [ ] `scripts/admin/grantAdmin.ts` を実装し、`docs/14-doctor-admin-cms.md` 末尾に運用手順を追記
-- [ ] `firestore.rules` を再確認し、書き込みが admin クレーム必須になっているか E2E で確認
-- [ ] `docs/api/doctor-content.md` に PUT 仕様を追記
-- [ ] `npm run lint` / `npm run build` を通す
-- [ ] 動作確認：ログイン → 編集 → プレビュー → 公開 → 結果画面（T-15 待ち）に反映するシナリオを手動確認
+1. Firebase Console → Authentication → **メール/パスワード** を有効化
+2. `.env.local` に `NEXT_PUBLIC_FIREBASE_*` を設定（`.env.local.example` 参照）
+3. 管理用ユーザーを Console で作成（メール＋パスワード）
+4. UID をコピーし、ローカルで admin クレーム付与:
+
+```bash
+export FIREBASE_PROJECT_ID=ai-doctor-5681b
+# いずれか:
+#   - `npx firebase-tools@latest login` 済み（推奨・シードと同じ）
+#   - FIREBASE_SERVICE_ACCOUNT_KEY を .env.local に設定
+#   - gcloud auth application-default login
+npm run grant:admin -- <uid>   # < > は付けない（UID だけ）
+```
+
+5. `npm run dev` → `http://localhost:3000/admin/login` でログイン
+6. `/admin/doctor-content` で編集 → プレビュー → **公開**
+7. Firestore `doctor_contents/default` の `publishedAt` / `updatedBy` を確認
+
+> クレーム反映には **一度ログアウトして再ログイン** が必要です。
+
+## TODO（手動確認）
+
+- [ ] Firebase Auth を本番プロジェクトで有効化済みか確認
+- [ ] 動作確認：ログイン → 編集 → プレビュー → 公開 → GET API / 結果画面への反映
 
 ## リファレンス
 

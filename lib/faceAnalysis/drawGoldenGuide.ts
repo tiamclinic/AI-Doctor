@@ -28,13 +28,14 @@ function drawLabel(
   align: CanvasTextAlign,
   fontSize: number,
   baseline: CanvasTextBaseline = "middle",
+  fontWeight: "400" | "500" | "600" = "500",
 ): void {
-  ctx.font = `${fontSize}px ui-sans-serif, system-ui, "Noto Sans JP", sans-serif`;
+  ctx.font = `${fontWeight} ${fontSize}px ui-sans-serif, system-ui, "Noto Sans JP", sans-serif`;
   ctx.textAlign = align;
   ctx.textBaseline = baseline;
-  ctx.lineWidth = Math.max(2, fontSize / 8);
-  ctx.strokeStyle = "rgba(11, 11, 11, 0.55)";
-  ctx.fillStyle = "rgba(250, 250, 250, 0.95)";
+  ctx.lineWidth = Math.max(3, fontSize / 5);
+  ctx.strokeStyle = "rgba(11, 11, 11, 0.72)";
+  ctx.fillStyle = "rgba(250, 250, 250, 0.98)";
   ctx.strokeText(text, x, y);
   ctx.fillText(text, x, y);
 }
@@ -50,9 +51,9 @@ function drawBandRatio(
   ctx.font = `600 ${fontSize}px ui-sans-serif, system-ui, "Noto Sans JP", sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.lineWidth = Math.max(2, fontSize / 6);
-  ctx.strokeStyle = "rgba(11, 11, 11, 0.65)";
-  ctx.fillStyle = "rgba(201, 169, 110, 0.98)";
+  ctx.lineWidth = Math.max(3, fontSize / 5);
+  ctx.strokeStyle = "rgba(11, 11, 11, 0.78)";
+  ctx.fillStyle = "rgba(201, 169, 110, 1)";
   ctx.strokeText(text, x, y);
   ctx.fillText(text, x, y);
 }
@@ -137,7 +138,7 @@ export function drawGoldenRatioGuide(
   // 水平 5 線の「間」に、顔の全縦長に対する割合を表示（モック踏襲）
   const ys = [hair.y, brow.y, eyeY, nasal.y, chin.y].sort((a, b) => a - b);
   const totalBand = ys[4]! - ys[0]!;
-  const fsBand = Math.max(11, Math.min(18, w / 38));
+  const fsBand = Math.max(15, Math.min(26, w / 26));
   if (totalBand > 1) {
     for (let i = 0; i < 4; i++) {
       const y0 = ys[i]!;
@@ -149,8 +150,8 @@ export function drawGoldenRatioGuide(
   }
 
   // 左上: 横五分割・目間・鼻口（縦三分割の数値は帯ごとに写真上へ移した）
-  const fsTop = Math.max(10, Math.min(15, w / 42));
-  const fsTop2 = Math.max(9, fsTop - 1);
+  const fsTop = Math.max(13, Math.min(19, w / 32));
+  const fsTop2 = Math.max(12, fsTop - 1);
   const topLine1 = `横五分割比 ${raw.horizontalFifths.ratio.toFixed(2)}（理想1.0）`;
   const topLine2 = `目間比 ${raw.eyeSpacing.ratio.toFixed(2)}（理想1.0）`;
   const topLine3 = `鼻口比 ${raw.noseMouthRatio.ratio.toFixed(3)}（理想 ${(1 / PHI).toFixed(3)}）`;
@@ -159,10 +160,10 @@ export function drawGoldenRatioGuide(
   drawLabel(ctx, 8, 8 + fsTop * 1.25, topLine2, "left", fsTop2, "top");
   drawLabel(ctx, 8, 8 + fsTop * 1.25 + fsTop2 * 1.25, topLine3, "left", fsTop2, "top");
 
-  const fsLabel = Math.max(10, Math.min(14, w / 48));
-  const labelX = w - 8;
+  const fsLabel = Math.max(16, Math.min(26, w / 24));
+  const labelX = w - 10;
   for (const { y, label } of yLines) {
-    drawLabel(ctx, labelX, y, label, "right", fsLabel, "middle");
+    drawLabel(ctx, labelX, y, label, "right", fsLabel, "middle", "600");
   }
 
   ctx.fillStyle = "rgba(201, 169, 110, 0.95)";

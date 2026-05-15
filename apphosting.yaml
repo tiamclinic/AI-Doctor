@@ -26,6 +26,12 @@ env:
       - BUILD
       - RUNTIME
 
+  # Firestore Admin（院方コンテンツ T-13）。App Hosting では ADC が使える。
+  - variable: FIREBASE_PROJECT_ID
+    value: ai-doctor-5681b
+    availability:
+      - RUNTIME
+
   # OpenAI API キー — Cloud Secret Manager に保管したシークレットを参照する。
   # 事前に以下のコマンドで secret を登録しておくこと:
   #   npx -y firebase-tools@latest apphosting:secrets:set OPENAI_API_KEY

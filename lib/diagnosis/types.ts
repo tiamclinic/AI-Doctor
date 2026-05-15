@@ -8,9 +8,11 @@ const METRIC_KEYS = [
   "verticalThirds",
   "horizontalFifths",
   "eyeSpacing",
+  "eyePosition",
   "noseMouthRatio",
   "eLine",
   "faceContour",
+  "bilateralSymmetry",
 ] as const satisfies readonly MetricKey[];
 
 // スコアの型定義
@@ -26,9 +28,11 @@ export const DiagnoseRequestSchema = z.object({
     verticalThirds: scoreNumber, // 縦三分割スコア
     horizontalFifths: scoreNumber, // 横五分割スコア
     eyeSpacing: scoreNumber, // 目間スコア
+    eyePosition: scoreNumber, // 目の位置（縦）スコア
     noseMouthRatio: scoreNumber, // 鼻口比率スコア
     eLine: scoreNumber, // E ラインスコア
     faceContour: scoreNumber, // 顔輪郭比率スコア
+    bilateralSymmetry: scoreNumber, // 左右対称性スコア
   }),
   locale: z.literal("ja").default("ja"), // 言語
 });

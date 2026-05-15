@@ -14,9 +14,8 @@ npm run dev       # Start dev server at http://localhost:3000
 npm run build     # Production build
 npm start         # Run production server
 npm run lint      # ESLint (flat config)
+npm run test      # Vitest
 ```
-
-No test framework is configured yet.
 
 ## Architecture
 
@@ -39,7 +38,7 @@ components/
 lib/
   faceAnalysis/
     landmarker.ts               MediaPipe Face Landmarker initialization
-    goldenRatio.ts              TIAM 6-metric calculations from 478 landmarks
+    goldenRatio.ts              TIAM metric raw values from 478 landmarks
     scoring.ts                  0–100 normalization & weighted TIAM Balance Index
   prompt/
     diagnosisPrompt.ts          System prompt with few-shot examples
@@ -50,25 +49,27 @@ public/
 ### Data flow
 
 1. Client uploads photo → MediaPipe WASM runs entirely in-browser → 478 landmark points
-2. `lib/faceAnalysis/goldenRatio.ts` computes 6 metrics → `scoring.ts` produces `totalScore` + per-metric scores
+2. `lib/faceAnalysis/goldenRatio.ts` computes raw metrics → `scoring.ts` produces `totalScore` + per-metric scores (`MetricKey` includes e.g. `eyePosition`, `bilateralSymmetry`; see source)
 3. `POST /api/diagnose` sends scores (NOT the photo) to gpt-4o-mini → structured diagnosis JSON
 4. `POST /api/generate-portrait` sends photo (base64) + scores to gpt-image-1 → ideal face PNG
 5. `GET /api/share-card` renders result via Satori → 1080×1920 PNG for SNS
 
 **Privacy invariant:** The photo never leaves the browser except for step 4, which requires explicit user consent (checkbox before triggering).
 
-### TIAM 6 Metrics (F-03)
+### TIAM metrics (F-03)
 
 | Metric | Ideal |
 |--------|-------|
 | 縦三分割バランス | 1:1:1 |
 | 横五分割バランス | 1.0 |
 | 目間バランス | 1.0 |
+| 目の位置（縦）比率 | 0.5（院内・テストダミー整合） |
 | 鼻口比率 | 1:1.618 |
 | E ライン整合度 | on-line |
 | 顔輪郭比率 | 1:1.46 |
+| 左右対称性（正規化ずれ平均） | 0 |
 
-Output type: `{ totalScore: number; scores: Record<string, number> }` — values to 1 decimal place.
+Output type: `{ totalScore: number; scores: Record<MetricKey, number> }` — values to 1 decimal place.
 
 ### API response schema (F-04)
 

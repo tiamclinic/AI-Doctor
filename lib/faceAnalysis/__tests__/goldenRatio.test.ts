@@ -25,6 +25,9 @@ describe("goldenRatio.computeRawMetrics", () => {
     // E ライン: 中心軸上なので 0 近傍
     expect(raw.eLine.upperLipDeviation).toBeCloseTo(0, 5);
     expect(raw.eLine.lowerLipDeviation).toBeCloseTo(0, 5);
+    // T-18
+    expect(raw.eyePosition.ratio).toBeCloseTo(IDEAL.eyePosition, 5);
+    expect(raw.bilateralSymmetry.meanAsymmetry).toBeCloseTo(0, 5);
   });
 
   it("ランドマークが 468 点未満なら例外を投げる", () => {
@@ -40,9 +43,11 @@ describe("scoring.computeScore", () => {
     expect(result.scores.verticalThirds).toBe(100);
     expect(result.scores.horizontalFifths).toBe(100);
     expect(result.scores.eyeSpacing).toBe(100);
+    expect(result.scores.eyePosition).toBe(100);
     expect(result.scores.noseMouthRatio).toBe(100);
     expect(result.scores.eLine).toBe(100);
     expect(result.scores.faceContour).toBe(100);
+    expect(result.scores.bilateralSymmetry).toBe(100);
     expect(result.totalScore).toBe(100);
   });
 
@@ -55,13 +60,19 @@ describe("scoring.computeScore", () => {
     expect(result.totalScore).toBe(roundTo(result.totalScore, 1));
   });
 
-  it("縦三分割が大きく崩れていれば縦三分割スコアが下がる", () => {
+  it("縦三分割が大きく崩れていれば縦三分割と目の縦位置スコアが下がる", () => {
     const lms = makeIdealLandmarks({ verticalSections: [2, 1, 1] });
     const result = computeScore(lms);
     expect(result.scores.verticalThirds).toBeLessThan(80);
-    // 他の指標は影響を受けない
-    expect(result.scores.horizontalFifths).toBe(100);
-    expect(result.scores.eyeSpacing).toBe(100);
+    expect(result.scores.eyePosition).toBeLessThan(100);
+  });
+
+  it("左右非対称なら左右対称性スコアが下がる", () => {
+    const lms = makeIdealLandmarks({ leftEyeShiftX: 0.08 });
+    const raw = computeRawMetrics(lms);
+    expect(raw.bilateralSymmetry.meanAsymmetry).toBeGreaterThan(0.001);
+    const result = computeScore(lms);
+    expect(result.scores.bilateralSymmetry).toBeLessThan(100);
   });
 
   it("鼻口比率が黄金比から外れるとスコアが下がる", () => {

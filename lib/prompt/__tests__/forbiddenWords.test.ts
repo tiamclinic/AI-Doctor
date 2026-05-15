@@ -28,6 +28,18 @@ describe("scanForbidden", () => {
     expect(r.ok).toBe(false);
     expect(r.hits).toContain("最も美しい");
   });
+
+  it("美容医療の施術名を検出する", () => {
+    const r = scanForbidden("ヒアルロン酸の注入をおすすめします。");
+    expect(r.ok).toBe(false);
+    expect(r.hits).toContain("ヒアルロン酸");
+  });
+
+  it("HIFU 等の機器名を検出する", () => {
+    const r = scanForbidden("HIFU で引き締める方法");
+    expect(r.ok).toBe(false);
+    expect(r.hits).toContain("HIFU");
+  });
 });
 
 describe("replaceMedicalTerms", () => {

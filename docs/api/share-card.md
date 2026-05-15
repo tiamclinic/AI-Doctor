@@ -29,9 +29,11 @@ type ShareCardRequest = {
     verticalThirds: number;
     horizontalFifths: number;
     eyeSpacing: number;
+    eyePosition: number;
     noseMouthRatio: number;
     eLine: number;
     faceContour: number;
+    bilateralSymmetry: number;
   };
   topStrength?: string;          // 1–80 文字（任意）
   tiamMessage?: string;          // 1–80 文字（任意）

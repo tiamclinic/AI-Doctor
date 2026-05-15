@@ -182,6 +182,26 @@ curl https://<本番URL>/api/health
 | Cold start が辛い                                                                              | `apphosting.yaml` の `runConfig.minInstances: 1` に上げると常時 1 台暖機（コスト増）                                                                                                                                                                                                                                                           |
 
 
+## Firestore（院方コンテンツ T-13）
+
+1. Firebase Console で **Firestore** を有効化（リージョン: `asia-northeast1` 推奨）
+2. ルールをデプロイ:
+
+```bash
+npx -y firebase-tools@latest deploy --only firestore:rules
+```
+
+3. シード投入（ローカルで `firebase login` 済み、または `FIREBASE_SERVICE_ACCOUNT_KEY` を設定）:
+
+```bash
+export FIREBASE_PROJECT_ID=ai-doctor-5681b
+npm run seed:doctor
+```
+
+4. 動作確認: `curl -s http://localhost:3000/api/doctor-content | head`
+
+詳細は [api/doctor-content.md](./api/doctor-content.md) を参照。
+
 ## OGP / SNS シェア
 
 T-06 で生成するシェアカードは、現状 `POST /api/share-card` でクライアントからダウンロードする形式。SNS シェア（OGP 画像として自動表示）は **T-09 で結果データを永続化（Firestore など）した後、T-08 で `app/result/[id]/opengraph-image.tsx` を追加して対応**する。

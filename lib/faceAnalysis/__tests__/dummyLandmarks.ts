@@ -19,6 +19,8 @@ type OverrideOptions = Partial<{
   faceWidthToHeight: number;
   // E ラインのずれ（0 なら鼻先-顎先の中心軸上）
   lipDeviation: number;
+  /** 画像左側の目（leftEye*）の x をずらす量。左右対称性テスト用 */
+  leftEyeShiftX: number;
 }>;
 
 const TOTAL_POINTS = 478;
@@ -32,6 +34,7 @@ export function makeIdealLandmarks(
   const noseMouthRatio = overrides.noseMouthRatio ?? 1 / PHI;
   const faceWidthToHeight = overrides.faceWidthToHeight ?? 1 / 1.46;
   const lipDeviation = overrides.lipDeviation ?? 0;
+  const leftEyeShiftX = overrides.leftEyeShiftX ?? 0;
 
   // 顔幅を 0.5、顔長は (顔幅 / faceWidthToHeight)
   const faceWidth = 0.5;
@@ -86,8 +89,8 @@ export function makeIdealLandmarks(
 
   points[idx.rightEyeOuter] = { x: rightEyeOuter, y: eyeY, z: 0 };
   points[idx.rightEyeInner] = { x: rightEyeInner, y: eyeY, z: 0 };
-  points[idx.leftEyeInner] = { x: leftEyeInner, y: eyeY, z: 0 };
-  points[idx.leftEyeOuter] = { x: leftEyeOuter, y: eyeY, z: 0 };
+  points[idx.leftEyeInner] = { x: leftEyeInner + leftEyeShiftX, y: eyeY, z: 0 };
+  points[idx.leftEyeOuter] = { x: leftEyeOuter + leftEyeShiftX, y: eyeY, z: 0 };
 
   points[idx.rightAla] = { x: centerX - noseWidth / 2, y: subnasaleY, z: 0 };
   points[idx.leftAla] = { x: centerX + noseWidth / 2, y: subnasaleY, z: 0 };

@@ -30,7 +30,7 @@ export function deriveImpressions(scoreResult: ScoreResult): string[] {
 
   if (total >= 85) picks.push("上品");
   if (s.eLine >= 80) picks.push("優しい");
-  if (s.horizontalFifths >= 80) picks.push("親しみやすい");
+  if (s.bilateralSymmetry >= 80) picks.push("親しみやすい");
   if (s.faceContour >= 85) picks.push("洗練された");
   if (s.noseMouthRatio >= 85) picks.push("整った");
   if (s.eyeSpacing >= 85) picks.push("穏やか");

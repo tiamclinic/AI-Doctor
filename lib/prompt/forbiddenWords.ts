@@ -1,4 +1,5 @@
 // GPT 頻出の "ぼかし" フレーズ。出力に出てきたら NG。
+import type { DiagnoseResponse } from "@/lib/diagnosis/types";
 // 大文字小文字や記号ゆらぎを意識せず素直な部分一致でチェックする。
 export const FORBIDDEN_PHRASES: readonly string[] = [
   "いかがでしょうか",
@@ -46,6 +47,59 @@ export const SUPERLATIVE_PHRASES: readonly string[] = [
   "ナンバーワン",
 ];
 
+/** 美容医療の固有施術・機器・薬剤名。AI 出力では使わせない（初版・リーガル確認前提）。 */
+export const MEDICAL_PROCEDURE_TERMS: readonly string[] = [
+  "ヒアルロン酸",
+  "ボトックス",
+  "ボツリヌス",
+  "脂肪溶解注射",
+  "BNLS",
+  "リジュラン",
+  "プラセンタ注射",
+  "糸リフト",
+  "スレッドリフト",
+  "切開",
+  "二重整形",
+  "鼻整形",
+  "顎削り",
+  "脂肪吸引",
+  "脂肪移植",
+  "HIFU",
+  "ハイフ",
+  "ピコレーザー",
+  "ダーマペン",
+  "ポテンツァ",
+  "ウルセラ",
+  "サーマクール",
+  "美容外科",
+  "美容整形",
+  "クリニックでの治療",
+];
+
+const MASK_PROCEDURE_REPLACEMENT = "美容バランスの整え方";
+
+/** 施術語を中立表現へ置換（長い語から先に処理し、部分重複を避ける） */
+export function maskProcedureTerms(text: string): string {
+  let result = text;
+  const sorted = [...MEDICAL_PROCEDURE_TERMS].sort((a, b) => b.length - a.length);
+  for (const term of sorted) {
+    if (!term) continue;
+    result = result.split(term).join(MASK_PROCEDURE_REPLACEMENT);
+  }
+  return result;
+}
+
+/** 診断 JSON の全テキストフィールドに施術語マスクを適用 */
+export function maskDiagnoseResponse(json: DiagnoseResponse): DiagnoseResponse {
+  return {
+    overallComment: maskProcedureTerms(json.overallComment),
+    strengths: json.strengths.map(maskProcedureTerms),
+    improvements: json.improvements.map(maskProcedureTerms),
+    recommendedCare: json.recommendedCare.map(maskProcedureTerms),
+    tiamMessage: maskProcedureTerms(json.tiamMessage),
+  };
+}
+
 export type ForbiddenScanResult = {
   ok: boolean;
   hits: string[];
@@ -65,7 +119,11 @@ const scan = (
 };
 
 export function scanForbidden(text: string): ForbiddenScanResult {
-  return scan(text, [FORBIDDEN_PHRASES, SUPERLATIVE_PHRASES]);
+  return scan(text, [
+    FORBIDDEN_PHRASES,
+    SUPERLATIVE_PHRASES,
+    MEDICAL_PROCEDURE_TERMS,
+  ]);
 }
 
 export function replaceMedicalTerms(text: string): string {

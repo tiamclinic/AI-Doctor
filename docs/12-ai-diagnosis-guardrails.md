@@ -8,7 +8,7 @@
 | 優先度     | 高                                  |
 | 見積       | 1〜2 日                             |
 | 担当       | -                                   |
-| ステータス | 未着手                              |
+| ステータス | 完了                                |
 
 ## 概要
 
@@ -18,12 +18,12 @@
 
 ## ゴール / 受け入れ基準
 
-- [ ] `lib/prompt/forbiddenWords.ts` に `MEDICAL_PROCEDURE_TERMS` を追加し、`scanForbidden()` が施術語も検査対象にする
-- [ ] `lib/prompt/diagnosisPrompt.ts` のシステムプロンプトに「施術名・医療行為の推奨を含めない」ルールを **箇条書きで明記**
-- [ ] `generateDiagnosis()` で違反検出時は **1 回までリトライ**（既存挙動を踏襲）。2 回目も違反なら **`maskProcedureTerms()`** で該当語を「美容バランスの整え方」相当の中立表現へ置換して返す
-- [ ] レスポンスヘッダまたはサーバーログに `x-diagnose-guardrail`（`clean` / `retried` / `masked`）を出す（クライアントには公開しない）
-- [ ] Vitest 追加 5 ケース以上が緑：施術名がそのまま素通りしない／マスクの結果に施術語が残らない／既存の置換が壊れない
-- [ ] `npm run lint` / `npm run build` がクリーン
+- [x] `lib/prompt/forbiddenWords.ts` に `MEDICAL_PROCEDURE_TERMS` を追加し、`scanForbidden()` が施術語も検査対象にする
+- [x] `lib/prompt/diagnosisPrompt.ts` のシステムプロンプトに「施術名・医療行為の推奨を含めない」ルールを **箇条書きで明記**
+- [x] `generateDiagnosis()` で違反検出時は **1 回までリトライ**（既存挙動を踏襲）。2 回目も違反なら **`maskProcedureTerms()`** で該当語を「美容バランスの整え方」相当の中立表現へ置換して返す
+- [x] レスポンスヘッダまたはサーバーログに `x-diagnose-guardrail`（`clean` / `retried` / `masked`）を出す（クライアントには公開しない）
+- [x] Vitest 追加 5 ケース以上が緑：施術名がそのまま素通りしない／マスクの結果に施術語が残らない／既存の置換が壊れない
+- [x] `npm run lint` / `npm run build` がクリーン
 
 ## 設計メモ
 
@@ -92,15 +92,15 @@ export const MEDICAL_PROCEDURE_TERMS: readonly string[] = [
 
 ## TODO
 
-- [ ] `lib/prompt/forbiddenWords.ts` に `MEDICAL_PROCEDURE_TERMS` を追加
-- [ ] 同ファイルに `maskProcedureTerms(text: string): string` を実装
-- [ ] `scanForbidden()` を `MEDICAL_PROCEDURE_TERMS` も含めるよう拡張（既存テストの後方互換に注意）
-- [ ] `lib/prompt/diagnosisPrompt.ts` のシステムプロンプト本文に施術禁止ルールを追記
-- [ ] `lib/diagnosis/openai.ts` の生成パイプラインにマスク段階を追加し、`x-diagnose-guardrail` ヘッダを `app/api/diagnose/route.ts` で付与
-- [ ] `lib/prompt/__tests__/forbiddenWords.test.ts` に施術語ケースを追加
-- [ ] `lib/prompt/__tests__/maskProcedureTerms.test.ts` を新規作成（5 ケース以上）
-- [ ] `docs/api/diagnose.md` の「禁止語」節と「ガードレール」節を更新
-- [ ] `npm run test` / `npm run lint` / `npm run build` を通す
+- [x] `lib/prompt/forbiddenWords.ts` に `MEDICAL_PROCEDURE_TERMS` を追加
+- [x] 同ファイルに `maskProcedureTerms(text: string): string` を実装
+- [x] `scanForbidden()` を `MEDICAL_PROCEDURE_TERMS` も含めるよう拡張（既存テストの後方互換に注意）
+- [x] `lib/prompt/diagnosisPrompt.ts` のシステムプロンプト本文に施術禁止ルールを追記
+- [x] `lib/diagnosis/openai.ts` の生成パイプラインにマスク段階を追加し、`x-diagnose-guardrail` ヘッダを `app/api/diagnose/route.ts` で付与
+- [x] `lib/prompt/__tests__/forbiddenWords.test.ts` に施術語ケースを追加
+- [x] `lib/prompt/__tests__/maskProcedureTerms.test.ts` を新規作成（5 ケース以上）
+- [x] `docs/api/diagnose.md` の「禁止語」節と「ガードレール」節を更新
+- [x] `npm run test` / `npm run lint` / `npm run build` を通す
 
 ## リファレンス
 

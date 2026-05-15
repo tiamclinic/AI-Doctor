@@ -21,9 +21,11 @@ export const PortraitRequestSchema = z.object({
     verticalThirds: ScoreNumber,
     horizontalFifths: ScoreNumber,
     eyeSpacing: ScoreNumber,
+    eyePosition: ScoreNumber,
     noseMouthRatio: ScoreNumber,
     eLine: ScoreNumber,
     faceContour: ScoreNumber,
+    bilateralSymmetry: ScoreNumber,
   }),
   consent: z.literal(true, {
     message: "OpenAI への写真送信に同意していません。",

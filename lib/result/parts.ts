@@ -28,7 +28,7 @@ export function getPartDisplayScore(result: ScoreResult, partId: PartId): number
   const { scores } = result;
   switch (partId) {
     case "eyes":
-      return scores.eyeSpacing;
+      return roundTo((scores.eyeSpacing + scores.eyePosition) / 2, 1);
     case "nose":
       return roundTo((scores.noseMouthRatio + scores.eLine) / 2, 1);
     case "mouth":
@@ -36,7 +36,7 @@ export function getPartDisplayScore(result: ScoreResult, partId: PartId): number
     case "contour":
       return roundTo((scores.faceContour + scores.verticalThirds) / 2, 1);
     case "symmetry":
-      return scores.horizontalFifths;
+      return scores.bilateralSymmetry;
     default: {
       const _exhaustive: never = partId;
       return _exhaustive;
@@ -48,7 +48,7 @@ export function getPartDisplayScore(result: ScoreResult, partId: PartId): number
 export function getPartMetricKeys(partId: PartId): readonly MetricKey[] {
   switch (partId) {
     case "eyes":
-      return ["eyeSpacing"];
+      return ["eyeSpacing", "eyePosition"];
     case "nose":
       return ["noseMouthRatio", "eLine"];
     case "mouth":
@@ -56,7 +56,7 @@ export function getPartMetricKeys(partId: PartId): readonly MetricKey[] {
     case "contour":
       return ["faceContour", "verticalThirds"];
     case "symmetry":
-      return ["horizontalFifths"];
+      return ["bilateralSymmetry"];
     default: {
       const _exhaustive: never = partId;
       return _exhaustive;

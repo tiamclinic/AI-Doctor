@@ -1,5 +1,10 @@
 // 黄金比スコアリングを行うための関数
-import { PHI, pickForeheadTopLandmark, TIAM_LANDMARK_INDEX } from "@/lib/faceAnalysis/landmarks";
+import {
+  PHI,
+  pickForeheadTopLandmark,
+  TIAM_BILATERAL_POINT_PAIRS,
+  TIAM_LANDMARK_INDEX,
+} from "@/lib/faceAnalysis/landmarks";
 import type { Landmark } from "@/lib/faceAnalysis/types";
 
 // 指標のキーを管理するための型
@@ -7,9 +12,11 @@ export type MetricKey =
   | "verticalThirds"
   | "horizontalFifths"
   | "eyeSpacing"
+  | "eyePosition"
   | "noseMouthRatio"
   | "eLine"
-  | "faceContour";
+  | "faceContour"
+  | "bilateralSymmetry";
 
 // 生値を管理するための型
 export type RawMetrics = {
@@ -25,6 +32,10 @@ export type RawMetrics = {
   eLine: { upperLipDeviation: number; lowerLipDeviation: number };
   // 顔輪郭比率: 顔幅 / 顔長
   faceContour: { faceWidth: number; faceHeight: number; ratio: number };
+  // 目の縦位置: (両眼 y 平均 − 額上端 y) / 顔長（額上端〜顎）
+  eyePosition: { eyeY: number; faceHeight: number; ratio: number };
+  // 左右対称性: 各左右ペアの中点 x が顔の左右中点からずれる量の平均（顔幅で正規化、0 が理想）
+  bilateralSymmetry: { meanAsymmetry: number };
 };
 
 // 理想値を管理するためのオブジェクト
@@ -32,13 +43,11 @@ export const IDEAL = {
   verticalThirds: [1, 1, 1] as const,
   horizontalFifths: 1.0,
   eyeSpacing: 1.0,
+  /** 目帯の縦位置（額上端〜顎の高さに対する比率）。理想ダミーと整合する 0.5 を採用 */
+  eyePosition: 0.5,
   noseMouthRatio: 1 / PHI, // 鼻幅 : 口幅 = 1 : 1.618
   faceContour: 1 / 1.46, // 顔幅 : 顔長 = 1 : 1.46
 } as const;
-
-// 2点間の距離を計算するための関数
-const dist2D = (a: Landmark, b: Landmark): number =>
-  Math.hypot(a.x - b.x, a.y - b.y);
 
 const requirePoint = (landmarks: Landmark[], index: number): Landmark => {
   const p = landmarks[index];
@@ -150,15 +159,42 @@ export function computeRawMetrics(landmarks: Landmark[]): RawMetrics {
     faceHeight,
     ratio: faceHeight === 0 ? 0 : faceWidth / faceHeight,
   };
-  // distance helper exported for tests
-  void dist2D;
+
+  // --- 目の縦位置（T-18）---
+  const eyeY =
+    (reOuter.y + reInner.y + leInner.y + leOuter.y) / 4;
+  const eyePosition = {
+    eyeY,
+    faceHeight,
+    ratio: faceHeight === 0 ? 0 : (eyeY - top.y) / faceHeight,
+  };
+
+  // --- 左右対称性（T-18）: 左右ペアの中点が頬ラインの中点から離れる量 ---
+  const xMid = (faceR.x + faceL.x) / 2;
+  let asymSum = 0;
+  let asymCount = 0;
+  for (const [aKey, bKey] of TIAM_BILATERAL_POINT_PAIRS) {
+    const ia = TIAM_LANDMARK_INDEX[aKey];
+    const ib = TIAM_LANDMARK_INDEX[bKey];
+    const pa = p(ia);
+    const pb = p(ib);
+    const pairMidX = (pa.x + pb.x) / 2;
+    const err = Math.abs(pairMidX - xMid) / (faceWidth || 1);
+    asymSum += err;
+    asymCount += 1;
+  }
+  const bilateralSymmetry = {
+    meanAsymmetry: asymCount === 0 ? 0 : asymSum / asymCount,
+  };
 
   return {
     verticalThirds,
     horizontalFifths,
     eyeSpacing,
+    eyePosition,
     noseMouthRatio,
     eLine,
     faceContour,
+    bilateralSymmetry,
   };
 }

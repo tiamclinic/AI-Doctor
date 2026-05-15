@@ -9,9 +9,11 @@ const METRIC_ORDER: MetricKey[] = [
   "verticalThirds",
   "horizontalFifths",
   "eyeSpacing",
+  "eyePosition",
   "noseMouthRatio",
   "eLine",
   "faceContour",
+  "bilateralSymmetry",
 ];
 
 export function ScoreSummary({ result }: { result: ScoreResult }) {

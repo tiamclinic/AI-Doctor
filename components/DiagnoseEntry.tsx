@@ -38,7 +38,7 @@ export function DiagnoseEntry() {
   }, [clearPhoto]);
 
   return (
-    <div className="flex w-full max-w-xl flex-col items-center gap-10">
+    <div className="flex w-full max-w-4xl flex-col items-center gap-10">
       {!consented ? (
         <LandingCta />
       ) : (

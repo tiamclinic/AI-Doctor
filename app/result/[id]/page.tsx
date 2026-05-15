@@ -8,6 +8,7 @@ import { DiagnosisText } from "@/components/DiagnosisText";
 import { IdealPortrait } from "@/components/IdealPortrait";
 import { MetricBarList } from "@/components/result/MetricBarList";
 import { PartAnalysisGrid } from "@/components/result/PartAnalysisGrid";
+import { useDoctorContent } from "@/components/result/useDoctorContent";
 import { ResultHero } from "@/components/result/ResultHero";
 import { ResultSectionHeader } from "@/components/result/ResultSectionHeader";
 import { TotalScoreCard } from "@/components/result/TotalScoreCard";
@@ -32,6 +33,7 @@ export default function ResultPage({
   const scoreResult = useDiagnosisStore((s) => s.scoreResult);
   const diagnosisText = useDiagnosisStore((s) => s.diagnosisText);
   const clearPhoto = useDiagnosisStore((s) => s.clearPhoto);
+  const { content: doctorContent, loading: doctorLoading } = useDoctorContent();
 
   const sharePageUrl = React.useMemo(() => {
     const fromEnv = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "");
@@ -99,9 +101,17 @@ export default function ResultPage({
         <section>
           <ResultSectionHeader
             title="パーツごとの詳細分析"
-            subtitle="各部位の傾向を TIAM AI のルールベース短文で要約しています（院方コメントは今後ここに併記予定）。"
+            subtitle="各部位の傾向を TIAM AI のルールベース短文で要約しています。顧問医師コメントは併記されます。"
           />
-          <PartAnalysisGrid scoreResult={scoreResult} />
+          <PartAnalysisGrid
+            scoreResult={scoreResult}
+            doctorContent={doctorContent}
+          />
+          {doctorLoading ? (
+            <p className="text-muted-foreground mt-3 text-center text-xs">
+              院方コメントを読み込み中…
+            </p>
+          ) : null}
         </section>
 
         {/* 下段: 総評 */}
