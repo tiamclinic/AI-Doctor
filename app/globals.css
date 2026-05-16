@@ -142,6 +142,13 @@
   .font-heading {
     font-family: var(--font-heading);
   }
+
+  /* react-easy-crop: Tailwind preflight の img { max-width:100% } による横潰れを防ぐ */
+  .photo-cropper-frame .reactEasyCrop_Image,
+  .photo-cropper-frame .reactEasyCrop_Video {
+    max-width: none !important;
+    max-height: none !important;
+  }
 }
 
 @media print {

@@ -9,7 +9,7 @@ import {
 } from "@/lib/result/faceType";
 
 describe("deriveFaceType", () => {
-  it("理想顔（ratio ≈ 0.685）は卵型ベース", () => {
+  it("キャリブレーション済み典型（ratio ≈ 0.92）は卵型ベース", () => {
     const score = computeScore(makeIdealLandmarks());
     expect(deriveFaceType(score)).toBe("卵型ベース");
   });
@@ -21,7 +21,7 @@ describe("deriveFaceType", () => {
   });
 
   it("丸顔寄り（faceWidthToHeight 大きめ）は丸顔系の文言", () => {
-    const score = computeScore(makeIdealLandmarks({ faceWidthToHeight: 0.82 }));
+    const score = computeScore(makeIdealLandmarks({ faceWidthToHeight: 1.05 }));
     const label = deriveFaceType(score);
     expect(label).toMatch(/丸顔/);
   });

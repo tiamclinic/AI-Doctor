@@ -9,10 +9,10 @@ describe("goldenRatio.computeRawMetrics", () => {
     const lms = makeIdealLandmarks();
     const raw = computeRawMetrics(lms);
 
-    // 縦三分割
-    expect(raw.verticalThirds.ratios[0]).toBeCloseTo(1 / 3, 5);
-    expect(raw.verticalThirds.ratios[1]).toBeCloseTo(1 / 3, 5);
-    expect(raw.verticalThirds.ratios[2]).toBeCloseTo(1 / 3, 5);
+    // 縦三分割（院内典型 17:39:44）
+    expect(raw.verticalThirds.ratios[0]).toBeCloseTo(0.17, 2);
+    expect(raw.verticalThirds.ratios[1]).toBeCloseTo(0.39, 2);
+    expect(raw.verticalThirds.ratios[2]).toBeCloseTo(0.44, 2);
 
     // 横五分割
     expect(raw.horizontalFifths.ratio).toBeCloseTo(IDEAL.horizontalFifths, 5);
@@ -36,19 +36,29 @@ describe("goldenRatio.computeRawMetrics", () => {
 });
 
 describe("scoring.computeScore", () => {
-  it("理想配置なら全指標 100、総合 100", () => {
-    const lms = makeIdealLandmarks();
-    const result = computeScore(lms);
+  it("キャリブレーション済みダミーは総合80点台以上・各指標も高スコア", () => {
+    const result = computeScore(makeIdealLandmarks());
 
+    expect(result.totalScore).toBeGreaterThanOrEqual(80);
     expect(result.scores.verticalThirds).toBe(100);
+    expect(result.scores.eyePosition).toBe(100);
+    expect(result.scores.faceContour).toBe(100);
     expect(result.scores.horizontalFifths).toBe(100);
     expect(result.scores.eyeSpacing).toBe(100);
-    expect(result.scores.eyePosition).toBe(100);
     expect(result.scores.noseMouthRatio).toBe(100);
     expect(result.scores.eLine).toBe(100);
-    expect(result.scores.faceContour).toBe(100);
     expect(result.scores.bilateralSymmetry).toBe(100);
-    expect(result.totalScore).toBe(100);
+  });
+
+  it("院内典型に近いプロポートでも総合80点台以上", () => {
+    const result = computeScore(
+      makeIdealLandmarks({
+        verticalSections: [16, 39, 45],
+        interEyeToEye: 0.68,
+        noseMouthRatio: 0.82,
+      }),
+    );
+    expect(result.totalScore).toBeGreaterThanOrEqual(80);
   });
 
   it("出力は小数第 1 位まで丸められる", () => {
@@ -67,6 +77,14 @@ describe("scoring.computeScore", () => {
     expect(result.scores.eyePosition).toBeLessThan(100);
   });
 
+  it("典型の目帯比率(約0.16)はスコア下限30に張り付かない", () => {
+    const result = computeScore(
+      makeIdealLandmarks({ verticalSections: [16, 39, 45] }),
+    );
+    expect(result.scores.eyePosition).toBeGreaterThan(30);
+    expect(result.scores.eyePosition).toBeGreaterThan(85);
+  });
+
   it("左右非対称なら左右対称性スコアが下がる", () => {
     const lms = makeIdealLandmarks({ leftEyeShiftX: 0.08 });
     const raw = computeRawMetrics(lms);
@@ -75,10 +93,10 @@ describe("scoring.computeScore", () => {
     expect(result.scores.bilateralSymmetry).toBeLessThan(100);
   });
 
-  it("鼻口比率が黄金比から外れるとスコアが下がる", () => {
+  it("鼻口比率が典型から大きく外れるとスコアが下がる", () => {
     const lms = makeIdealLandmarks({ noseMouthRatio: 1.0 }); // 鼻幅 = 口幅
     const result = computeScore(lms);
-    expect(result.scores.noseMouthRatio).toBeLessThan(40);
+    expect(result.scores.noseMouthRatio).toBeLessThan(70);
   });
 
   it("どんな入力でもスコアは 30〜100 の範囲に収まる（下限ガード）", () => {

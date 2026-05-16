@@ -2,8 +2,8 @@
  * 結果画面モック準拠の黄金比ガイド（三分割水平線・補助縦線・ラベル・主要指標数値）を Canvas に描画する。
  * 座標系は FaceLandmarkOverlay と同じ（ctx.scale(dpr) 後の logical サイズ = naturalWidth × naturalHeight）。
  */
-import type { RawMetrics } from "@/lib/faceAnalysis/goldenRatio";
-import { PHI, pickForeheadTopLandmark, TIAM_LANDMARK_INDEX } from "@/lib/faceAnalysis/landmarks";
+import { IDEAL, type RawMetrics } from "@/lib/faceAnalysis/goldenRatio";
+import { pickForeheadTopLandmark, TIAM_LANDMARK_INDEX } from "@/lib/faceAnalysis/landmarks";
 import type { Landmark } from "@/lib/faceAnalysis/types";
 
 const requirePoint = (landmarks: Landmark[], index: number): Landmark => {
@@ -135,12 +135,12 @@ export function drawGoldenRatioGuide(
   }
   ctx.setLineDash([]);
 
-  // 水平 5 線の「間」に、顔の全縦長に対する割合を表示（モック踏襲）
-  const ys = [hair.y, brow.y, eyeY, nasal.y, chin.y].sort((a, b) => a - b);
-  const totalBand = ys[4]! - ys[0]!;
+  // 眉間〜顎の帯比率（スコアリングと同じ縦基準）
+  const ys = [brow.y, eyeY, nasal.y, chin.y];
+  const totalBand = chin.y - brow.y;
   const fsBand = Math.max(15, Math.min(26, w / 26));
   if (totalBand > 1) {
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 3; i++) {
       const y0 = ys[i]!;
       const y1 = ys[i + 1]!;
       const frac = (y1 - y0) / totalBand;
@@ -154,7 +154,7 @@ export function drawGoldenRatioGuide(
   const fsTop2 = Math.max(12, fsTop - 1);
   const topLine1 = `横五分割比 ${raw.horizontalFifths.ratio.toFixed(2)}（理想1.0）`;
   const topLine2 = `目間比 ${raw.eyeSpacing.ratio.toFixed(2)}（理想1.0）`;
-  const topLine3 = `鼻口比 ${raw.noseMouthRatio.ratio.toFixed(3)}（理想 ${(1 / PHI).toFixed(3)}）`;
+  const topLine3 = `鼻口比 ${raw.noseMouthRatio.ratio.toFixed(3)}（理想 ${IDEAL.noseMouthRatio.toFixed(2)}）`;
 
   drawLabel(ctx, 8, 8, topLine1, "left", fsTop, "top");
   drawLabel(ctx, 8, 8 + fsTop * 1.25, topLine2, "left", fsTop2, "top");

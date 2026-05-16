@@ -2,8 +2,8 @@ import type { ScoreResult } from "@/lib/faceAnalysis/scoring";
 import { replaceMedicalTerms } from "@/lib/prompt/forbiddenWords";
 
 /**
- * 顔タイプ: 顔輪郭比率（顔幅 / 顔長）と縦三分割のバランスから決める。
- * 理想 (1 / 1.46 ≒ 0.685) を中心に、面長寄り / 卵型 / 丸顔寄りで段階を切る。
+ * 顔タイプ: 顔輪郭比率（顔幅 / 眉間〜顎）から決める。
+ * 正面ランドマーク典型 ≒ 0.92 を卵型の中心に、面長寄り / 丸顔寄りで段階を切る。
  * 文言は薬機法配慮で「型」「寄り」止まり（治す・改善等の語は避ける）。
  */
 export function deriveFaceType(scoreResult: ScoreResult): string {
@@ -11,10 +11,10 @@ export function deriveFaceType(scoreResult: ScoreResult): string {
 
   if (!Number.isFinite(ratio)) return "卵型ベース";
 
-  if (ratio < 0.62) return "面長ベース";
-  if (ratio < 0.68) return "卵型ベース（やや面長寄り）";
-  if (ratio <= 0.72) return "卵型ベース";
-  if (ratio <= 0.78) return "卵型ベース（やや丸顔寄り）";
+  if (ratio < 0.85) return "面長ベース";
+  if (ratio < 0.89) return "卵型ベース（やや面長寄り）";
+  if (ratio <= 0.95) return "卵型ベース";
+  if (ratio <= 1.0) return "卵型ベース（やや丸顔寄り）";
   return "丸顔ベース";
 }
 

@@ -32,6 +32,39 @@ env:
     availability:
       - RUNTIME
 
+  # Firebase Auth（管理画面ログイン・結果画面の「ドクター所見を追記」CTA）
+  # 公開 Web 設定のため Secret 不要。BUILD + RUNTIME でクライアントに埋め込む。
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyDRKUSJU4bPGvpW2YibShTUCcOd7l19NJU
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: ai-doctor-5681b.firebaseapp.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: ai-doctor-5681b
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: ai-doctor-5681b.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "88086403893"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: 1:88086403893:web:71e08302a73a842c5f0a7c
+    availability:
+      - BUILD
+      - RUNTIME
+
   # OpenAI API キー — Cloud Secret Manager に保管したシークレットを参照する。
   # 事前に以下のコマンドで secret を登録しておくこと:
   #   npx -y firebase-tools@latest apphosting:secrets:set OPENAI_API_KEY

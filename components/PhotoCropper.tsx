@@ -7,6 +7,10 @@ import Cropper, { type Area } from "react-easy-crop";
 
 import { Button } from "@/components/ui/button";
 import { cropToImageFile, type PixelCrop } from "@/lib/image/cropImage";
+import {
+  pickCropObjectFit,
+  type CropObjectFit,
+} from "@/lib/image/cropObjectFit";
 import { cn } from "@/lib/utils";
 
 export type PhotoCropperProps = {
@@ -137,6 +141,7 @@ export function PhotoCropper({
   const [optionalHintsDismissed, setOptionalHintsDismissed] =
     React.useState(false);
   const [detailedHintsOpen, setDetailedHintsOpen] = React.useState(false);
+  const [objectFit, setObjectFit] = React.useState<CropObjectFit>("vertical-cover");
 
   React.useEffect(() => {
     queueMicrotask(() => {
@@ -184,6 +189,13 @@ export function PhotoCropper({
     setZoom(1);
   }, []);
 
+  const onMediaLoaded = React.useCallback(
+    (media: { naturalWidth: number; naturalHeight: number }) => {
+      setObjectFit(pickCropObjectFit(media.naturalWidth, media.naturalHeight, ASPECT));
+    },
+    [],
+  );
+
   const handleConfirm = React.useCallback(async () => {
     if (!pixelsRef.current) return;
     setBusy(true);
@@ -210,7 +222,7 @@ export function PhotoCropper({
       <div className="mx-auto grid w-full max-w-sm gap-5 lg:max-w-3xl lg:grid-cols-[minmax(0,24rem)_minmax(10rem,12rem)] lg:items-start lg:justify-center">
         <div className="min-w-0">
           <div className="relative mx-auto w-full max-w-sm">
-            <div className="border-border bg-muted/30 relative aspect-[4/5] w-full overflow-hidden rounded-xl border shadow-inner">
+            <div className="photo-cropper-frame border-border bg-muted/30 relative aspect-[4/5] w-full overflow-hidden rounded-xl border shadow-inner">
               <Cropper
                 image={imageDataUrl}
                 crop={crop}
@@ -222,13 +234,17 @@ export function PhotoCropper({
                 restrictPosition
                 showGrid
                 cropShape="rect"
-                objectFit="cover"
+                objectFit={objectFit}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
                 onCropComplete={onCropComplete}
+                onMediaLoaded={onMediaLoaded}
                 classes={{
                   containerClassName: "!bg-transparent",
-                  mediaClassName: "select-none",
+                  mediaClassName: "select-none !max-w-none !max-h-none",
+                }}
+                style={{
+                  cropAreaStyle: { border: "none" },
                 }}
               />
               {/* 構図ガイド：頭・顎（横）＋顔の中心（縦）。目は固定線を出さない */}
@@ -248,11 +264,6 @@ export function PhotoCropper({
                   kind="chin"
                 />
               </div>
-              {/* セーフエリア枠 */}
-              <div
-                className="pointer-events-none absolute inset-3 z-20 rounded-lg ring-1 ring-white/40"
-                aria-hidden
-              />
             </div>
             <p className="text-muted-foreground mt-2 text-center text-xs leading-relaxed">
               ドラッグで位置調整、ピンチまたはスライダーで拡大できます。

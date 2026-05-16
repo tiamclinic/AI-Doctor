@@ -1,7 +1,5 @@
 // 黄金比スコアリングを行うための関数
 import {
-  PHI,
-  pickForeheadTopLandmark,
   TIAM_BILATERAL_POINT_PAIRS,
   TIAM_LANDMARK_INDEX,
 } from "@/lib/faceAnalysis/landmarks";
@@ -32,21 +30,35 @@ export type RawMetrics = {
   eLine: { upperLipDeviation: number; lowerLipDeviation: number };
   // 顔輪郭比率: 顔幅 / 顔長
   faceContour: { faceWidth: number; faceHeight: number; ratio: number };
-  // 目の縦位置: (両眼 y 平均 − 額上端 y) / 顔長（額上端〜顎）
+  // 目の縦位置: (両眼 y 平均 − 眉間 y) / 顔長（眉間〜顎）
   eyePosition: { eyeY: number; faceHeight: number; ratio: number };
   // 左右対称性: 各左右ペアの中点 x が顔の左右中点からずれる量の平均（顔幅で正規化、0 が理想）
   bilateralSymmetry: { meanAsymmetry: number };
 };
 
-// 理想値を管理するためのオブジェクト
+/**
+ * 生え際〜眉間が顔長に占める典型比率（正面・MediaPipe 478 点の経験値）。
+ * 眉間基準に顔長を切り替えたときの顔輪郭比理想へ換算するために使う。
+ */
+export const TYPICAL_FOREHEAD_SHARE = 0.21;
+
+/** 眉間〜顎の縦三分割（眉〜目 / 目〜鼻下 / 鼻下〜顎）の正面典型比率 */
+export const TYPICAL_VERTICAL_THIRDS = [0.17, 0.39, 0.44] as const;
+
+// 理想値を管理するためのオブジェクト（理論黄金比より MediaPipe 正面の典型を優先）
 export const IDEAL = {
-  verticalThirds: [1, 1, 1] as const,
+  verticalThirds: TYPICAL_VERTICAL_THIRDS,
   horizontalFifths: 1.0,
-  eyeSpacing: 1.0,
-  /** 目帯の縦位置（額上端〜顎の高さに対する比率）。理想ダミーと整合する 0.5 を採用 */
-  eyePosition: 0.5,
-  noseMouthRatio: 1 / PHI, // 鼻幅 : 口幅 = 1 : 1.618
-  faceContour: 1 / 1.46, // 顔幅 : 顔長 = 1 : 1.46
+  /** 目間/目幅。正面ランドマークでは 1.0 より狭めに出やすい */
+  eyeSpacing: 0.72,
+  /**
+   * 目帯の縦位置（眉間〜顎）。生値は verticalThirds の上段比率と同じ。
+   */
+  eyePosition: TYPICAL_VERTICAL_THIRDS[0],
+  /** 鼻幅/口幅。黄金比 1:φ より正面メッシュではやや大きめに出やすい */
+  noseMouthRatio: 0.78,
+  /** 顔幅:顔長（眉間〜顎）。1:1.46 を生え際基準から眉間基準へ換算し、典型を微調整 */
+  faceContour: 0.92,
 } as const;
 
 const requirePoint = (landmarks: Landmark[], index: number): Landmark => {
@@ -67,15 +79,23 @@ export function computeRawMetrics(landmarks: Landmark[]): RawMetrics {
   const idx = TIAM_LANDMARK_INDEX;
   const p = (i: number) => requirePoint(landmarks, i);
 
-  // --- 縦三分割: 顔の縦方向を 3 等分する 4 点（額上端 / 眉間 / 鼻下 / 顎先）---
-  // 額上端は複数候補から最も上の点を採用（生え際の見え方に寄せる）
-  const top = pickForeheadTopLandmark(landmarks);
+  // --- 顔の縦基準: 眉間〜顎（生え際は個人差が大きくスコアから除外）---
   const brow = p(idx.glabella);
   const nasal = p(idx.subnasale);
   const chin = p(idx.chin);
 
-  const section1 = Math.abs(brow.y - top.y);
-  const section2 = Math.abs(nasal.y - brow.y);
+  const reOuter = p(idx.rightEyeOuter);
+  const reInner = p(idx.rightEyeInner);
+  const leInner = p(idx.leftEyeInner);
+  const leOuter = p(idx.leftEyeOuter);
+  const eyeY =
+    (reOuter.y + reInner.y + leInner.y + leOuter.y) / 4;
+
+  const faceHeight = Math.abs(chin.y - brow.y);
+
+  // --- 縦三分割: 眉間〜目 / 目〜鼻下 / 鼻下〜顎 ---
+  const section1 = Math.abs(eyeY - brow.y);
+  const section2 = Math.abs(nasal.y - eyeY);
   const section3 = Math.abs(chin.y - nasal.y);
   const totalVertical = section1 + section2 + section3;
 
@@ -88,17 +108,10 @@ export function computeRawMetrics(landmarks: Landmark[]): RawMetrics {
     ] as [number, number, number],
   };
 
-  // --- 顔幅 / 顔長 ---
+  // --- 顔幅 / 顔長（眉間〜顎）---
   const faceR = p(idx.faceRight);
   const faceL = p(idx.faceLeft);
   const faceWidth = Math.abs(faceL.x - faceR.x);
-  const faceHeight = Math.abs(chin.y - top.y);
-
-  // --- 目幅（左右の平均）と目間（内側コーナー間）---
-  const reOuter = p(idx.rightEyeOuter);
-  const reInner = p(idx.rightEyeInner);
-  const leInner = p(idx.leftEyeInner);
-  const leOuter = p(idx.leftEyeOuter);
   const eyeWidthR = Math.abs(reInner.x - reOuter.x);
   const eyeWidthL = Math.abs(leOuter.x - leInner.x);
   const eyeWidth = (eyeWidthR + eyeWidthL) / 2;
@@ -161,12 +174,10 @@ export function computeRawMetrics(landmarks: Landmark[]): RawMetrics {
   };
 
   // --- 目の縦位置（T-18）---
-  const eyeY =
-    (reOuter.y + reInner.y + leInner.y + leOuter.y) / 4;
   const eyePosition = {
     eyeY,
     faceHeight,
-    ratio: faceHeight === 0 ? 0 : (eyeY - top.y) / faceHeight,
+    ratio: faceHeight === 0 ? 0 : (eyeY - brow.y) / faceHeight,
   };
 
   // --- 左右対称性（T-18）: 左右ペアの中点が頬ラインの中点から離れる量 ---

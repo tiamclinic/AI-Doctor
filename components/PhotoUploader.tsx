@@ -16,6 +16,7 @@ import {
 import { trackEvent } from "@/lib/analytics/track";
 import { hasTermsConsent } from "@/lib/consent";
 import { heicToJpegFile } from "@/lib/image/heicToJpeg";
+import { normalizeImageForCrop } from "@/lib/image/normalizeForCrop";
 import { readFileAsDataURL } from "@/lib/image/readDataUrl";
 import { isHeicLike, validateImageFile } from "@/lib/image/validate";
 import { useDiagnosisStore } from "@/lib/store/diagnosis-store";
@@ -79,7 +80,8 @@ export function PhotoUploader({
           output = await heicToJpegFile(file);
         }
 
-        const dataUrl = await readFileAsDataURL(output);
+        const rawDataUrl = await readFileAsDataURL(output);
+        const dataUrl = await normalizeImageForCrop(rawDataUrl);
         // この時点ではまだクロップ前。ストアへの反映はクロップ確定時に行う。
         setSource({ file: output, dataUrl });
         setCropped(null);
@@ -232,6 +234,7 @@ export function PhotoUploader({
 
         {source && !cropped && (
           <PhotoCropper
+            key={source.dataUrl}
             imageDataUrl={source.dataUrl}
             fileName={source.file.name}
             onConfirm={handleCropConfirm}
