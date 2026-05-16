@@ -47,6 +47,14 @@ export const DoctorContentErrorSchema = z.object({
     "forbidden",
     "write_failed",
     "forbidden_content",
+    /** Bearer 欠如（T-22 doctor-notes 等） */
+    "missing_token",
+    /** ID トークン無効 */
+    "invalid_token",
+    /** admin / staff いずれも無い */
+    "insufficient_role",
+    /** 下書きのみで公開データが無い場合など（将来拡張） */
+    "draft_only",
   ]),
   message: z.string(),
   forbiddenHits: z.array(z.string()).optional(),

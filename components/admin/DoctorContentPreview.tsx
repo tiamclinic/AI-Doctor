@@ -46,7 +46,7 @@ export function DoctorContentPreview({
         title={title}
         score={score}
         aiSummary={aiSummary}
-        doctorSlot={<DoctorPreviewSlot body={part.body} />}
+        doctorBlock={<DoctorPreviewSlot body={part.body} />}
       />
     </div>
   );

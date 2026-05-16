@@ -12,22 +12,32 @@ export function useDoctorContent() {
 
   React.useEffect(() => {
     const ac = new AbortController();
-    let cancelled = false;
 
-    void fetchDoctorContent(ac.signal).then((result) => {
-      if (cancelled) return;
-      if (result.ok) {
-        setContent(result.data);
-        setError(null);
-      } else if (result.status !== 304) {
+    void (async () => {
+      try {
+        const result = await fetchDoctorContent(ac.signal);
+        if (ac.signal.aborted) return;
+        if (result.ok) {
+          setContent(result.data);
+          setError(null);
+        } else if (result.status !== 304) {
+          setContent(null);
+          setError(result.error.message);
+        }
+        setLoading(false);
+      } catch (e) {
+        if (ac.signal.aborted || (e instanceof DOMException && e.name === "AbortError")) {
+          return;
+        }
         setContent(null);
-        setError(result.error.message);
+        setError(
+          e instanceof Error ? e.message : "院方コンテンツの取得に失敗しました。",
+        );
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    })();
 
     return () => {
-      cancelled = true;
       ac.abort();
     };
   }, []);

@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/card";
 import { useFaceLandmarker } from "@/hooks/useFaceLandmarker";
 import { trackEvent } from "@/lib/analytics/track";
+import { persistDiagnosis } from "@/lib/diagnoses/client";
+import { saveDiagnosisSession } from "@/lib/diagnoses/session-cache";
 import { requestDiagnosis } from "@/lib/diagnosis/client";
 import { computeScore } from "@/lib/faceAnalysis/scoring";
 import { useDiagnosisStore } from "@/lib/store/diagnosis-store";
@@ -130,13 +132,34 @@ export default function DiagnosePage() {
     if (res.ok) {
       setDiagnosisText(res.data);
       setDiagnosisStatus("success");
+      const id = useDiagnosisStore.getState().resultId;
+      const score = useDiagnosisStore.getState().scoreResult;
+      if (id && score) {
+        const persisted = await persistDiagnosis({
+          resultId: id,
+          scoreResult: score,
+          diagnosisText: res.data,
+        });
+        if (!persisted.ok && process.env.NODE_ENV !== "production") {
+          console.warn("[persistDiagnosis]", persisted.message);
+        }
+      }
       void trackEvent("diagnosis_completed", {
         total_score: scoreResult.totalScore,
         duration_ms: Math.round(elapsed),
       });
-      // 診断完了したら自動的に結果画面へ遷移する
-      const id = useDiagnosisStore.getState().resultId;
       if (id) {
+        const snapshot = useDiagnosisStore.getState();
+        if (snapshot.photoDataUrl && snapshot.scoreResult) {
+          saveDiagnosisSession({
+            resultId: id,
+            photoDataUrl: snapshot.photoDataUrl,
+            detectResult: snapshot.detectResult,
+            scoreResult: snapshot.scoreResult,
+            diagnosisText: res.data,
+            savedAt: new Date().toISOString(),
+          });
+        }
         router.push(`/result/${id}`);
       }
     } else {

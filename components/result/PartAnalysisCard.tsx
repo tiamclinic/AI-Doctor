@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 
 import { PartAnalysisIcon } from "@/components/result/PartAnalysisIcon";
+import { AiSourceBadge } from "@/components/result/SourceBadges";
 import type { PartId } from "@/lib/result/parts";
 
 type PartAnalysisCardProps = {
@@ -12,8 +13,8 @@ type PartAnalysisCardProps = {
   score: number;
   /** ルールベースの TIAM AI 参考短文 */
   aiSummary: string;
-  /** T-15: 院方コンテンツ。未指定なら枠ごと非表示 */
-  doctorSlot?: ReactNode;
+  /** 医師ブロック（`DoctorPartBlock`）。未指定なら AI のみ */
+  doctorBlock?: ReactNode;
 };
 
 export function PartAnalysisCard({
@@ -21,7 +22,7 @@ export function PartAnalysisCard({
   title,
   score,
   aiSummary,
-  doctorSlot,
+  doctorBlock,
 }: PartAnalysisCardProps) {
   return (
     <article
@@ -45,24 +46,15 @@ export function PartAnalysisCard({
         </span>
       </header>
 
-      <section className="mt-3 flex flex-1 flex-col" aria-label="TIAM AI 由来コメント">
-        <div className="inline-flex w-fit items-center rounded border border-tiam-gold/40 bg-tiam-gold/10 px-2 py-0.5">
-          <span className="text-tiam-primary text-[10px] font-medium tracking-wide">TIAM AI</span>
-        </div>
+      <section className="mt-3 flex flex-1 flex-col" aria-label="AI 由来コメント">
+        <AiSourceBadge />
         <p className="text-muted-foreground mt-2 text-xs leading-relaxed">{aiSummary}</p>
       </section>
 
-      {doctorSlot ? (
-        <div
-          className="border-border/60 mt-4 border-t border-dashed pt-3"
-          aria-label="院方コメント枠"
-        >
-          {doctorSlot}
-        </div>
-      ) : null}
+      {doctorBlock}
 
       <footer className="text-muted-foreground mt-auto pt-3 text-[10px] leading-relaxed">
-        ※ 美容バランスの傾向を読み解く参考情報です。院方のコメントは今後ここに表示予定です。
+        ※ 美容バランスの傾向を読み解く参考情報です。
       </footer>
     </article>
   );

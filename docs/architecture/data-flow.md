@@ -26,8 +26,10 @@
 | 5 | サーバー | `ScoreResult` | `/api/diagnose` → gpt-4o-mini | `DiagnoseResponse` |
 | 6 | ブラウザ | `ScoreResult` + dataURL | `/api/generate-portrait`（任意） | 理想顔 PNG |
 | 7 | ブラウザ | `ScoreResult` + 診断テキスト | `/api/share-card`（任意） | シェアカード PNG |
+| 8 | ブラウザ | `resultId` | `GET /api/doctor-notes/{resultId}`（公開済みのみ） | 個別医師ノート（パーツ + 総評追記） |
+| 9 | ブラウザ（スタッフ） | Firebase Auth セッション | 結果画面 CTA → `/admin/diagnoses/{resultId}` | 追記・公開（T-21） |
 
-ステップ 6 のみ写真が外に出る。それ以外はすべて数値とテキストの送受信のみ。
+ステップ 6 のみ写真が外に出る。それ以外はすべて数値とテキストの送受信のみ（ステップ 8 も `resultId` のみ）。
 
 ## サーバーサイドの責務
 

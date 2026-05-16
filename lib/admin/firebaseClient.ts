@@ -72,3 +72,8 @@ export async function userHasAdminClaim(user: User): Promise<boolean> {
   const result = await user.getIdTokenResult();
   return result.claims.admin === true;
 }
+
+export async function userHasStaffOrAdminClaim(user: User): Promise<boolean> {
+  const result = await user.getIdTokenResult();
+  return result.claims.admin === true || result.claims.staff === true;
+}

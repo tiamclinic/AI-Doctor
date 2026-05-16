@@ -10,13 +10,14 @@ import { Label } from "@/components/ui/label";
 import {
   isFirebaseAuthConfigured,
   signInAdmin,
-  userHasAdminClaim,
+  userHasStaffOrAdminClaim,
 } from "@/lib/admin/firebaseClient";
 
 function AdminLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const errorParam = searchParams.get("error");
+  const nextPath = searchParams.get("next");
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -27,7 +28,9 @@ function AdminLoginForm() {
   const queryError =
     errorParam === "not_admin"
       ? "管理者権限（admin クレーム）がありません。`npm run grant:admin <uid>` で付与してください。"
-      : null;
+      : errorParam === "not_staff_or_admin"
+        ? "スタッフ権限（admin または staff クレーム）がありません。"
+        : null;
   const error = submitError ?? queryError;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -36,14 +39,18 @@ function AdminLoginForm() {
     setLoading(true);
     try {
       const user = await signInAdmin(email.trim(), password);
-      const isAdmin = await userHasAdminClaim(user);
-      if (!isAdmin) {
+      const allowed = await userHasStaffOrAdminClaim(user);
+      if (!allowed) {
         setSubmitError(
-          "このアカウントには admin クレームがありません。Firebase Console でユーザーを作成し、grant:admin を実行してください。",
+          "このアカウントには admin / staff クレームがありません。Firebase Console でユーザーを作成し、クレームを付与してください。",
         );
         return;
       }
-      router.replace("/admin/doctor-content");
+      const dest =
+        nextPath && nextPath.startsWith("/admin/")
+          ? nextPath
+          : "/admin/doctor-content";
+      router.replace(dest);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "ログインに失敗しました。";

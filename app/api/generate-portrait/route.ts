@@ -1,3 +1,7 @@
+// 日本語でコードの説明をしてください。
+// このコードは、OpenAI の gpt-image-1 を使用して理想顔を生成する API ルートです。
+// 理想顔は、ユーザーの顔写真とスコアを基に、OpenAI の gpt-image-1 で生成されます。
+// 理想顔は、ユーザーの顔写真とスコアを基に、OpenAI の gpt-image-1 で生成されます。
 import { NextRequest, NextResponse } from "next/server";
 
 import { editPortrait } from "@/lib/openai/images";
@@ -17,6 +21,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
+// エラーを返す関数
 function errorResponse(
   status: number,
   error: PortraitErrorCode,
@@ -27,6 +32,7 @@ function errorResponse(
   return NextResponse.json(body, { status });
 }
 
+// クライアントの IP アドレスを取得する関数
 function getClientIp(req: NextRequest): string {
   const xff = req.headers.get("x-forwarded-for");
   if (xff) return xff.split(",")[0]?.trim() || "unknown";

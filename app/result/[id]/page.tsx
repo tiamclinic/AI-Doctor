@@ -1,39 +1,67 @@
 "use client";
 
+import Link from "next/link";
 import { Share2, Wand2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 
 import { DiagnosisText } from "@/components/DiagnosisText";
 import { IdealPortrait } from "@/components/IdealPortrait";
+import { DoctorEditCta } from "@/components/result/DoctorEditCta";
 import { MetricBarList } from "@/components/result/MetricBarList";
 import { PartAnalysisGrid } from "@/components/result/PartAnalysisGrid";
-import { useDoctorContent } from "@/components/result/useDoctorContent";
+import { ResultDisclaimerBanner } from "@/components/result/ResultDisclaimerBanner";
 import { ResultHero } from "@/components/result/ResultHero";
 import { ResultSectionHeader } from "@/components/result/ResultSectionHeader";
 import { TotalScoreCard } from "@/components/result/TotalScoreCard";
 import { CopyLinkButton } from "@/components/share/CopyLinkButton";
 import { ShareButtons } from "@/components/share/ShareButtons";
 import { ShareCardButton } from "@/components/ShareCardButton";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useDoctorNote } from "@/hooks/useDoctorNote";
+import { useResultPageSession } from "@/hooks/useResultPageSession";
 import { useDiagnosisStore } from "@/lib/store/diagnosis-store";
+import {
+  RESULT_DISCLAIMER,
+  RESULT_FOOTER_COPY,
+} from "@/lib/result/disclaimer";
+import { cn } from "@/lib/utils";
 
-export default function ResultPage({
+function ResultPageContent({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { id } = React.use(params);
 
-  const resultId = useDiagnosisStore((s) => s.resultId);
-  const photoDataUrl = useDiagnosisStore((s) => s.photoDataUrl);
-  const detectResult = useDiagnosisStore((s) => s.detectResult);
-  const scoreResult = useDiagnosisStore((s) => s.scoreResult);
-  const diagnosisText = useDiagnosisStore((s) => s.diagnosisText);
+  const session = useResultPageSession(id);
   const clearPhoto = useDiagnosisStore((s) => s.clearPhoto);
-  const { content: doctorContent, loading: doctorLoading } = useDoctorContent();
+
+  const {
+    data: doctorNote,
+    isLoading: doctorNoteLoading,
+    refresh: refreshDoctorNote,
+  } = useDoctorNote(id);
+
+  const refreshHandled = React.useRef(false);
+
+  React.useEffect(() => {
+    if (searchParams.get("refresh") !== "1" || refreshHandled.current) return;
+    refreshHandled.current = true;
+    void refreshDoctorNote();
+    const url = new URL(window.location.href);
+    url.searchParams.delete("refresh");
+    router.replace(url.pathname + url.search, { scroll: false });
+  }, [searchParams, refreshDoctorNote, router]);
+
+  React.useEffect(() => {
+    if (session.status === "not_found") {
+      router.replace("/");
+    }
+  }, [session.status, router]);
 
   const sharePageUrl = React.useMemo(() => {
     const fromEnv = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "");
@@ -44,18 +72,12 @@ export default function ResultPage({
     return "";
   }, [id]);
 
-  React.useEffect(() => {
-    if (!resultId || resultId !== id || !scoreResult || !photoDataUrl) {
-      router.replace("/");
-    }
-  }, [resultId, id, scoreResult, photoDataUrl, router]);
-
   const handleStartOver = React.useCallback(() => {
     clearPhoto();
     router.push("/");
   }, [clearPhoto, router]);
 
-  if (!scoreResult || !photoDataUrl || resultId !== id) {
+  if (session.status === "loading") {
     return (
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-16">
         <p className="text-muted-foreground text-sm">結果を読み込み中…</p>
@@ -63,16 +85,57 @@ export default function ResultPage({
     );
   }
 
+  if (session.status === "error") {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-16">
+        <p className="text-destructive text-sm" role="alert">
+          {session.message}
+        </p>
+        <Link href="/" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+          トップへ
+        </Link>
+      </main>
+    );
+  }
+
+  if (session.status !== "ready") {
+    return null;
+  }
+
+  const {
+    scoreResult,
+    diagnosisText,
+    photoDataUrl,
+    detectResult,
+    fromPersistedOnly,
+  } = session;
+
+  const doctorMeta = doctorNote
+    ? { updatedBy: doctorNote.updatedBy, publishedAt: doctorNote.publishedAt }
+    : undefined;
+
   return (
     <main className="flex flex-1 flex-col items-center px-4 py-12 sm:py-16">
       <div className="flex w-full max-w-5xl flex-col gap-8">
+        {fromPersistedOnly ? (
+          <p
+            className="border-tiam-gold/25 bg-tiam-gold/8 text-tiam-primary rounded-lg border px-4 py-2.5 text-center text-[10px] leading-relaxed sm:text-xs"
+            role="status"
+          >
+            スコアとレポートはサーバーから表示しています。写真は診断直後の同じブラウザタブでのみ保持されます（リロード後は復元できない場合があります）。
+          </p>
+        ) : null}
+
         <header className="flex flex-col items-center text-center">
           <span className="text-tiam-gold font-heading text-[10px] tracking-[0.3em] uppercase">
             TIAM Beauty AI Report
           </span>
-          <h1 className="font-heading text-tiam-primary mt-2 text-2xl tracking-tight sm:text-3xl">
-            黄金比診断結果
-          </h1>
+          <div className="mt-2 flex w-full flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-6">
+            <h1 className="font-heading text-tiam-primary text-2xl tracking-tight sm:text-3xl">
+              黄金比診断結果
+            </h1>
+            <DoctorEditCta resultId={id} hasPublishedNote={doctorNote !== null} />
+          </div>
           <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
             あなたの顔を黄金比に基づいて分析しました。
           </p>
@@ -81,7 +144,8 @@ export default function ResultPage({
           </p>
         </header>
 
-        {/* 上段: 写真+顔タイプ／印象（左） と 総合評価+各パーツの比率（右） */}
+        <ResultDisclaimerBanner />
+
         <div className="grid items-start gap-6 lg:grid-cols-[1.05fr_1fr]">
           <ResultHero
             photoDataUrl={photoDataUrl}
@@ -97,31 +161,34 @@ export default function ResultPage({
           </div>
         </div>
 
-        {/* 中段: パーツ分析 */}
         <section>
           <ResultSectionHeader
             title="パーツごとの詳細分析"
-            subtitle="各部位の傾向を TIAM AI のルールベース短文で要約しています。顧問医師コメントは併記されます。"
+            subtitle="TIAM AI の参考短文と、公開済みの当院医師所見を併記します。"
           />
-          <PartAnalysisGrid
-            scoreResult={scoreResult}
-            doctorContent={doctorContent}
-          />
-          {doctorLoading ? (
+          <PartAnalysisGrid scoreResult={scoreResult} doctorNote={doctorNote} />
+          {doctorNoteLoading ? (
             <p className="text-muted-foreground mt-3 text-center text-xs">
-              院方コメントを読み込み中…
+              医師所見を読み込み中…
             </p>
           ) : null}
         </section>
 
-        {/* 下段: 総評 */}
         {diagnosisText ? (
           <section>
             <ResultSectionHeader
               title="総評・詳細レポート"
-              subtitle="OpenAI により生成された文章です。"
+              subtitle={
+                doctorNote?.report
+                  ? "AI 生成文と当院医師の追記を、セクションごとに併記して表示します。"
+                  : "OpenAI により生成された文章です。"
+              }
             />
-            <DiagnosisText result={diagnosisText} />
+            <DiagnosisText
+              result={diagnosisText}
+              doctorReport={doctorNote?.report}
+              doctorMeta={doctorMeta}
+            />
           </section>
         ) : null}
 
@@ -151,20 +218,22 @@ export default function ResultPage({
           </CardContent>
         </Card>
 
-        <Card className="border-border/80">
-          <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:p-8">
-            <div className="flex items-center gap-2">
-              <Wand2 className="text-tiam-gold size-4" />
-              <h3 className="font-heading text-tiam-primary text-sm tracking-tight">
-                AI 理想顔ジェネレーター
-              </h3>
-            </div>
-            <p className="text-muted-foreground max-w-md text-xs leading-relaxed">
-              TIAM AI が黄金比に近づけた、あなたの「整え後イメージ」を描き起こします。
-            </p>
-            <IdealPortrait photoDataUrl={photoDataUrl} score={scoreResult} />
-          </CardContent>
-        </Card>
+        {photoDataUrl ? (
+          <Card className="border-border/80">
+            <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:p-8">
+              <div className="flex items-center gap-2">
+                <Wand2 className="text-tiam-gold size-4" />
+                <h3 className="font-heading text-tiam-primary text-sm tracking-tight">
+                  AI 理想顔ジェネレーター
+                </h3>
+              </div>
+              <p className="text-muted-foreground max-w-md text-xs leading-relaxed">
+                TIAM AI が黄金比に近づけた、あなたの「整え後イメージ」を描き起こします。
+              </p>
+              <IdealPortrait photoDataUrl={photoDataUrl} score={scoreResult} />
+            </CardContent>
+          </Card>
+        ) : null}
 
         <Card className="border-border/80">
           <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:p-8">
@@ -186,17 +255,42 @@ export default function ResultPage({
           </CardContent>
         </Card>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+        <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
           <Button type="button" variant="outline" onClick={handleStartOver}>
             別の写真でもう一度診断
           </Button>
+          <Link
+            href={`/admin/diagnoses/${id}`}
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-center")}
+          >
+            ドクター所見を編集
+          </Link>
         </div>
 
         <footer className="text-muted-foreground mt-2 text-center text-[10px] leading-relaxed">
-          ※ 本診断は美容バランスの傾向を示す参考情報であり、医療診断ではありません。
-          <br />© TIAM Beauty Lab
+          {RESULT_DISCLAIMER}
+          <br />
+          {RESULT_FOOTER_COPY}
         </footer>
       </div>
     </main>
+  );
+}
+
+export default function ResultPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  return (
+    <React.Suspense
+      fallback={
+        <main className="flex flex-1 flex-col items-center justify-center px-4 py-16">
+          <p className="text-muted-foreground text-sm">結果を読み込み中…</p>
+        </main>
+      }
+    >
+      <ResultPageContent params={params} />
+    </React.Suspense>
   );
 }

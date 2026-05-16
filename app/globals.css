@@ -143,3 +143,14 @@
     font-family: var(--font-heading);
   }
 }
+
+@media print {
+  .doctor-edit-cta {
+    display: none !important;
+  }
+
+  .result-doctor-block {
+    border-style: solid !important;
+    break-inside: avoid;
+  }
+}

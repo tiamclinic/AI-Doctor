@@ -9,7 +9,7 @@ import {
   DoctorContentSchema,
   type DoctorContent,
 } from "@/lib/doctor/types";
-import { getAdminFirestore, isFirebaseAdminConfigured } from "@/lib/firebase/admin";
+import { getAdminFirestore, isFirestoreAdminConfigured } from "@/lib/firebase/admin";
 
 export class DoctorContentNotFoundError extends Error {
   constructor(tenantId: string) {
@@ -31,7 +31,7 @@ function loadSeedFallback(): DoctorContent {
 export async function getDoctorContent(
   tenantId: string = DEFAULT_TENANT_ID,
 ): Promise<DoctorContent> {
-  if (!isFirebaseAdminConfigured()) {
+  if (!isFirestoreAdminConfigured()) {
     if (process.env.NODE_ENV === "development") {
       return loadSeedFallback();
     }
@@ -71,7 +71,7 @@ export async function saveDoctorContent(
   content: DoctorContent,
   tenantId: string = DEFAULT_TENANT_ID,
 ): Promise<void> {
-  if (!isFirebaseAdminConfigured()) {
+  if (!isFirestoreAdminConfigured()) {
     throw new Error(
       "FIREBASE_PROJECT_ID または FIREBASE_SERVICE_ACCOUNT_KEY が未設定です。",
     );
