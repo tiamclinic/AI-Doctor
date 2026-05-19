@@ -1,6 +1,6 @@
 import type { DiagnoseResponse } from "@/lib/diagnosis/types";
 import type { DetectResult } from "@/lib/faceAnalysis/types";
-import type { ScoreResult } from "@/lib/faceAnalysis/scoring";
+import { normalizeScoreResult, type ScoreResult } from "@/lib/faceAnalysis/scoring";
 
 const KEY_PREFIX = "tiam-diagnosis-session:";
 const SESSION_CHANGE_EVENT = "tiam-diagnosis-session-change";
@@ -66,7 +66,13 @@ function parseDiagnosisSession(
     if (parsed.resultId !== resultId || !parsed.photoDataUrl || !parsed.scoreResult) {
       return null;
     }
-    return parsed;
+    return {
+      ...parsed,
+      scoreResult: normalizeScoreResult(
+        parsed.scoreResult,
+        parsed.detectResult?.landmarks,
+      ),
+    };
   } catch {
     return null;
   }

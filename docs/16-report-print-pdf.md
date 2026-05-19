@@ -8,7 +8,7 @@
 | 優先度     | 中                                  |
 | 見積       | 2 日                                |
 | 担当       | -                                   |
-| ステータス | 未着手                              |
+| ステータス | 完了                                |
 
 ## 概要
 
@@ -16,15 +16,15 @@
 
 ## ゴール / 受け入れ基準
 
-- [ ] 結果画面右上に **「印刷する」ボタン**（`<PrintButton />`）が表示される
-- [ ] クリックすると `window.print()` が呼ばれ、印刷ダイアログが開く
-- [ ] **A4 縦（210mm × 297mm）** で 1 ページ目に「ヘッダ + ヒーロー + 指標バー」、2 ページ目に「パーツ分析 + 総評 + 院方コメント + 免責」を配置
-- [ ] AI バッジ / 院方バッジが印刷でも判別可能（モノクロ印刷を想定して **形状でも区別**：AI = 細枠、院方 = 二重枠）
-- [ ] **ヘッダー固定**: 各印刷ページに `TIAM 美容バランスレポート` ＋ クリニック名 ＋ 結果 ID ＋ 日時
-- [ ] **フッター固定**: ページ番号（`page 1/2` 等）＋ 免責 1 行
-- [ ] SNS シェア／再診断 CTA など **画面用 UI は印刷時に非表示**（`print:hidden`）
-- [ ] 写真はオーバーレイ込みで印刷される（Canvas → `<img>` への自動差し替えは不要）
-- [ ] `npm run lint` / `npm run build` がクリーン
+- [x] 結果画面右上に **「印刷する」ボタン**（`<PrintButton />`）が表示される
+- [x] クリックすると `window.print()` が呼ばれ、印刷ダイアログが開く
+- [x] **A4 縦（210mm × 297mm）** で 1 ページ目に「ヘッダ + ヒーロー + 指標バー」、2 ページ目に「パーツ分析 + 総評 + 院方コメント + 免責」を配置
+- [x] AI バッジ / 院方バッジが印刷でも判別可能（モノクロ印刷を想定して **形状でも区別**：AI = 細枠、院方 = 二重枠）
+- [x] **ヘッダー固定**: 各印刷ページに `TIAM 美容バランスレポート` ＋ クリニック名 ＋ 結果 ID ＋ 日時
+- [x] **フッター固定**: ページ番号（`1 / 2` 形式）＋ 免責 1 行
+- [x] SNS シェア／再診断 CTA など **画面用 UI は印刷時に非表示**（`print:hidden`）
+- [x] 写真はオーバーレイ込みで印刷される（Canvas → `<img>` への自動差し替えは不要）
+- [x] `npm run lint` / `npm run build` がクリーン
 
 ## 設計メモ
 
@@ -100,17 +100,27 @@ A4 縦、290mm 印字幅
 
 ## TODO
 
-- [ ] `components/result/PrintButton.tsx` を実装（クリックで `window.print()`）
-- [ ] `components/result/PrintHeader.tsx` を実装（`print:block hidden` で印刷時のみ表示）
-- [ ] `components/result/PrintFooter.tsx` を実装（同上、ページ番号は CSS counter `counter(page)` を使用）
-- [ ] `app/globals.css` に `@page` と `@media print` を追加
-- [ ] 既存の SNS シェア / 再診断 / シェアカードボタンに `print:hidden` を付与
-- [ ] `app/result/[id]/page.tsx` に `<PrintButton />` と `<PrintHeader />` / `<PrintFooter />` を配置
-- [ ] パーツカードに `break-inside: avoid` を効かせる（`.part-card` クラス追加）
+- [x] `components/result/PrintButton.tsx` を実装（クリックで `window.print()`）
+- [x] `components/result/PrintHeader.tsx` を実装（`print:block hidden` で印刷時のみ表示）
+- [x] `components/result/PrintFooter.tsx` を実装（同上、ページ番号は CSS counter `counter(page)` を使用）
+- [x] `app/globals.css` に `@page` と `@media print` を追加
+- [x] 既存の SNS シェア / 再診断 / シェアカードボタンに `print:hidden` を付与
+- [x] `app/result/[id]/page.tsx` に `<PrintButton />` と `<PrintHeader />` / `<PrintFooter />` を配置
+- [x] パーツカードに `break-inside: avoid` を効かせる（`.part-card` クラス追加）
 - [ ] **手動 QA**: Chrome / Safari / iOS Safari で印刷プレビューを撮り、`docs/assets/print-preview-*.png` に格納
 - [ ] **手動 QA**: モノクロ印刷時に AI / 院方バッジが判別できることを確認
-- [ ] `docs/16-report-print-pdf.md` 末尾に「ブラウザ別の癖」（Safari の余白、Chrome のヘッダ・フッタ自動出力）を追記
-- [ ] `npm run lint` / `npm run build` を通す
+- [x] 本ドキュメント末尾に「ブラウザ別の癖」を追記
+- [x] `npm run lint` / `npm run build` を通す
+
+## ブラウザ別の癖（手動 QA 用）
+
+| ブラウザ | 注意点 |
+|----------|--------|
+| **Chrome** | 「背景のグラフィック」を ON にしないとバッジの色・写真オーバーレイが薄くなる。倍率は 100% 推奨。ブラウザ標準のヘッダ／フッタ（URL・日付）は **OFF** にするとアプリ側の `PrintHeader` / `PrintFooter` と重複しない。 |
+| **Safari（macOS）** | 余白が広めになりがち。レイアウトが 2 ページに収まらない場合は倍率を 95% 程度に調整。 |
+| **iOS Safari** | 共有シート →「プリント」から PDF 保存可能。画面用 CTA は非表示になるが、プレビューで改ページ位置を必ず確認。 |
+
+クリニック名は `NEXT_PUBLIC_CLINIC_NAME`（未設定時は `TIAM Beauty Lab`）で変更可能。
 
 ## リファレンス
 

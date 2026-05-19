@@ -2,8 +2,11 @@ import "server-only";
 
 import { FieldValue } from "firebase-admin/firestore";
 
+import { DOCTOR_NOTES_COLLECTION } from "@/lib/doctor-notes/types";
 import {
   DIAGNOSES_COLLECTION,
+  type DiagnosisListItem,
+  type DiagnosisNoteStatus,
   type DiagnosisRecord,
   DiagnosisRecordSchema,
 } from "@/lib/diagnoses/types";
@@ -65,29 +68,76 @@ export async function getDiagnosis(resultId: string): Promise<DiagnosisRecord | 
 
 export type ListDiagnosesOptions = {
   limit: number;
+  cursor?: string;
+};
+
+function resolveNoteStatus(
+  raw: { status?: string } | undefined,
+): DiagnosisNoteStatus {
+  if (raw?.status === "published") return "published";
+  if (raw?.status === "draft") return "draft";
+  return "none";
+}
+
+export type ListDiagnosesResult = {
+  items: DiagnosisListItem[];
+  nextCursor: string | null;
 };
 
 export async function listDiagnoses(
   options: ListDiagnosesOptions,
-): Promise<DiagnosisRecord[]> {
+): Promise<ListDiagnosesResult> {
   if (!isFirestoreAdminConfigured()) {
     throw new Error(
       "FIREBASE_SERVICE_ACCOUNT_KEY または GOOGLE_APPLICATION_CREDENTIALS が未設定です。",
     );
   }
   const db = getAdminFirestore();
-  const snap = await db
+  let query = db
     .collection(DIAGNOSES_COLLECTION)
     .orderBy("createdAt", "desc")
-    .limit(options.limit)
-    .get();
+    .limit(options.limit);
 
-  const out: DiagnosisRecord[] = [];
+  if (options.cursor) {
+    query = query.startAfter(options.cursor);
+  }
+
+  const snap = await query.get();
+
+  const records: DiagnosisRecord[] = [];
   for (const doc of snap.docs) {
     const parsed = DiagnosisRecordSchema.safeParse(doc.data());
-    if (parsed.success) out.push(parsed.data);
+    if (parsed.success) records.push(parsed.data);
   }
-  return out;
+
+  if (records.length === 0) {
+    return { items: [], nextCursor: null };
+  }
+
+  const noteRefs = records.map((r) =>
+    db.collection(DOCTOR_NOTES_COLLECTION).doc(r.resultId),
+  );
+  const noteSnaps = await db.getAll(...noteRefs);
+
+  const noteStatusById = new Map<string, DiagnosisNoteStatus>();
+  for (const noteSnap of noteSnaps) {
+    if (!noteSnap.exists) continue;
+    noteStatusById.set(
+      noteSnap.id,
+      resolveNoteStatus(noteSnap.data() as { status?: string }),
+    );
+  }
+
+  const items: DiagnosisListItem[] = records.map((record) => ({
+    ...record,
+    noteStatus: noteStatusById.get(record.resultId) ?? "none",
+  }));
+
+  const last = records[records.length - 1]!;
+  const nextCursor =
+    snap.docs.length >= options.limit ? last.createdAt : null;
+
+  return { items, nextCursor };
 }
 
 export async function updateDiagnosisMeta(

@@ -1,4 +1,7 @@
-import type { ScoreResult } from "@/lib/faceAnalysis/scoring";
+import {
+  pickDisplayedScores,
+  type ScoreResult,
+} from "@/lib/faceAnalysis/scoring";
 import {
   type PortraitError,
   type PortraitResponse,
@@ -19,7 +22,7 @@ export async function requestIdealPortrait(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       imageBase64,
-      scores: score.scores,
+      scores: pickDisplayedScores(score.scores),
       consent: true,
     }),
     signal,

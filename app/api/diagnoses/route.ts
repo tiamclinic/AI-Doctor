@@ -15,6 +15,7 @@ import {
   DiagnosisCreateBodySchema,
 } from "@/lib/diagnoses/types";
 import { isFirestoreAdminConfigured } from "@/lib/firebase/admin";
+import { formatFirebaseAdminErrorMessage } from "@/lib/firebase/formatAdminError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -86,9 +87,11 @@ export async function POST(req: NextRequest) {
     if (process.env.NODE_ENV !== "production") {
       console.error("[POST /api/diagnoses]", e);
     }
-    const message =
-      e instanceof Error ? e.message : "診断結果の保存に失敗しました。";
-    return jsonError(500, "persist_failed", message);
+    return jsonError(
+      500,
+      "persist_failed",
+      formatFirebaseAdminErrorMessage(e, "診断結果の保存に失敗しました。"),
+    );
   }
 }
 
@@ -112,24 +115,30 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const q = DiagnosesListQuerySchema.safeParse({
     limit: url.searchParams.get("limit") ?? undefined,
+    cursor: url.searchParams.get("cursor") ?? undefined,
   });
   if (!q.success) {
     return jsonError(
       400,
       "invalid_request",
-      "limit パラメータが不正です。",
+      "limit / cursor パラメータが不正です。",
     );
   }
 
   try {
-    const items = await listDiagnoses({ limit: q.data.limit });
-    return NextResponse.json({ items }, { status: 200 });
+    const result = await listDiagnoses({
+      limit: q.data.limit,
+      cursor: q.data.cursor,
+    });
+    return NextResponse.json(result, { status: 200 });
   } catch (e) {
     if (process.env.NODE_ENV !== "production") {
       console.error("[GET /api/diagnoses]", e);
     }
-    const message =
-      e instanceof Error ? e.message : "診断一覧の取得に失敗しました。";
-    return jsonError(500, "fetch_failed", message);
+    return jsonError(
+      500,
+      "fetch_failed",
+      formatFirebaseAdminErrorMessage(e, "診断一覧の取得に失敗しました。"),
+    );
   }
 }

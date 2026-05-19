@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { DISPLAYED_METRIC_KEYS } from "@/lib/faceAnalysis/scoring";
 import type { ShareCardRequest } from "@/lib/share-card/types";
 
 // 1080×1920 縦長（9:16）。Instagram Story / TikTok 互換。
@@ -16,16 +17,7 @@ const COLOR = {
   border: "rgba(250, 250, 250, 0.12)",
 } as const;
 
-const METRIC_ORDER = [
-  "verticalThirds",
-  "horizontalFifths",
-  "eyeSpacing",
-  "eyePosition",
-  "noseMouthRatio",
-  "eLine",
-  "faceContour",
-  "bilateralSymmetry",
-] as const;
+const METRIC_ORDER = DISPLAYED_METRIC_KEYS;
 
 const METRIC_LABEL: Record<(typeof METRIC_ORDER)[number], string> = {
   verticalThirds: "縦三分割",
@@ -33,9 +25,10 @@ const METRIC_LABEL: Record<(typeof METRIC_ORDER)[number], string> = {
   eyeSpacing: "目間",
   eyePosition: "目の縦位置",
   noseMouthRatio: "鼻口比",
-  eLine: "Eライン",
   faceContour: "顔輪郭",
   bilateralSymmetry: "左右対称",
+  eyeLevelSymmetry: "目の高さ",
+  mouthLevelSymmetry: "口角の高さ",
 };
 
 // テンプレで描画する全文字列を集約。フォントサブセット生成のために使う。
@@ -52,7 +45,7 @@ const STATIC_TEMPLATE_TEXT = [
   // レーダーチャート見出し
   "TIAM指標バランス",
   // METRIC_LABEL の全項目
-  "縦三分割横五分割目間目の縦位置鼻口比Eライン顔輪郭左右対称",
+  "縦三分割横五分割目間目の縦位置鼻口比顔輪郭左右対称目の高さ口角の高さ",
   // フッター注意書き / コピーライト（句読点・記号も含む）
   "※ 美容バランスの傾向を読み解く参考情報であり、医療診断ではありません。",
   "© TIAM Beauty Lab",

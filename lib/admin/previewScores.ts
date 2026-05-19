@@ -12,6 +12,8 @@ export const ADMIN_PREVIEW_SCORE: ScoreResult = {
     eLine: 80,
     faceContour: 83,
     bilateralSymmetry: 89,
+    eyeLevelSymmetry: 86,
+    mouthLevelSymmetry: 84,
   },
   rawValues: {
     verticalThirds: {
@@ -25,5 +27,7 @@ export const ADMIN_PREVIEW_SCORE: ScoreResult = {
     eLine: { upperLipDeviation: 0, lowerLipDeviation: 0 },
     faceContour: { faceWidth: 0.68, faceHeight: 1, ratio: 0.68 },
     bilateralSymmetry: { meanAsymmetry: 0 },
+    eyeLevelSymmetry: { eyeLevelDelta: 0.01 },
+    mouthLevelSymmetry: { mouthLevelDelta: 0.015 },
   },
 };

@@ -1,9 +1,10 @@
+import { IDEAL } from "@/lib/faceAnalysis/goldenRatio";
 import type { ScoreResult } from "@/lib/faceAnalysis/scoring";
 import { replaceMedicalTerms } from "@/lib/prompt/forbiddenWords";
 
 /**
  * 顔タイプ: 顔輪郭比率（顔幅 / 眉間〜顎）から決める。
- * 正面ランドマーク典型 ≒ 0.92 を卵型の中心に、面長寄り / 丸顔寄りで段階を切る。
+ * 正面ランドマーク典型 ≒ 1.29 を卵型の中心に、面長寄り / 丸顔寄りで段階を切る。
  * 文言は薬機法配慮で「型」「寄り」止まり（治す・改善等の語は避ける）。
  */
 export function deriveFaceType(scoreResult: ScoreResult): string {
@@ -11,10 +12,11 @@ export function deriveFaceType(scoreResult: ScoreResult): string {
 
   if (!Number.isFinite(ratio)) return "卵型ベース";
 
-  if (ratio < 0.85) return "面長ベース";
-  if (ratio < 0.89) return "卵型ベース（やや面長寄り）";
-  if (ratio <= 0.95) return "卵型ベース";
-  if (ratio <= 1.0) return "卵型ベース（やや丸顔寄り）";
+  const c = IDEAL.faceContour;
+  if (ratio < c - 0.07) return "面長ベース";
+  if (ratio < c - 0.03) return "卵型ベース（やや面長寄り）";
+  if (ratio <= c + 0.03) return "卵型ベース";
+  if (ratio <= c + 0.08) return "卵型ベース（やや丸顔寄り）";
   return "丸顔ベース";
 }
 
@@ -29,11 +31,16 @@ export function deriveImpressions(scoreResult: ScoreResult): string[] {
   const picks: string[] = [];
 
   if (total >= 85) picks.push("上品");
-  if (s.eLine >= 80) picks.push("優しい");
   if (s.bilateralSymmetry >= 80) picks.push("親しみやすい");
+  if (s.eyeLevelSymmetry >= 80 && s.mouthLevelSymmetry >= 75) {
+    picks.push("優しい");
+  }
   if (s.faceContour >= 85) picks.push("洗練された");
   if (s.noseMouthRatio >= 85) picks.push("整った");
   if (s.eyeSpacing >= 85) picks.push("穏やか");
+  if (s.eyeLevelSymmetry >= 85 && s.mouthLevelSymmetry >= 85) {
+    picks.push("均整");
+  }
 
   if (picks.length < 3) {
     for (const candidate of ["親しみやすい", "穏やか", "ナチュラル", "落ち着いた"]) {

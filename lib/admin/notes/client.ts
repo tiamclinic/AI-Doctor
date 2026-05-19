@@ -1,7 +1,7 @@
 import {
   DoctorContentErrorSchema,
   type DoctorContentError,
-} from "@/lib/doctor/types";
+} from "@/lib/api/errors";
 import {
   DoctorNoteSchema,
   type DoctorNote,

@@ -191,16 +191,9 @@ curl https://<本番URL>/api/health
 npx -y firebase-tools@latest deploy --only firestore:rules
 ```
 
-3. シード投入（ローカルで `firebase login` 済み、または `FIREBASE_SERVICE_ACCOUNT_KEY` を設定）:
+3. （任意）旧 `doctor_contents` コレクションが残っている場合は [api/doctor-content.md](./api/doctor-content.md) の手順で削除。
 
-```bash
-export FIREBASE_PROJECT_ID=ai-doctor-5681b
-npm run seed:doctor
-```
-
-4. 動作確認: `curl -s http://localhost:3000/api/doctor-content | head`
-
-詳細は [api/doctor-content.md](./api/doctor-content.md) を参照。
+4. 動作確認: `curl -s http://localhost:3000/api/doctor-notes/<resultId> | head`（公開済みノートがある診断 ID）
 
 ## OGP / SNS シェア
 

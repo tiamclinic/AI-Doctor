@@ -2,19 +2,11 @@
 
 import { Sparkles } from "lucide-react";
 
-import type { MetricKey } from "@/lib/faceAnalysis/goldenRatio";
-import { METRIC_LABELS, type ScoreResult } from "@/lib/faceAnalysis/scoring";
-
-const METRIC_ORDER: MetricKey[] = [
-  "verticalThirds",
-  "horizontalFifths",
-  "eyeSpacing",
-  "eyePosition",
-  "noseMouthRatio",
-  "eLine",
-  "faceContour",
-  "bilateralSymmetry",
-];
+import {
+  DISPLAYED_METRIC_KEYS,
+  METRIC_LABELS,
+  type ScoreResult,
+} from "@/lib/faceAnalysis/scoring";
 
 export function ScoreSummary({ result }: { result: ScoreResult }) {
   return (
@@ -38,7 +30,7 @@ export function ScoreSummary({ result }: { result: ScoreResult }) {
       </div>
 
       <ul className="flex flex-col gap-2.5">
-        {METRIC_ORDER.map((key) => {
+        {DISPLAYED_METRIC_KEYS.map((key) => {
           const value = result.scores[key];
           return (
             <li key={key} className="flex flex-col gap-1">

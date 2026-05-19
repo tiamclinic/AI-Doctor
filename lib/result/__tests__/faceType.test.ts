@@ -9,19 +9,19 @@ import {
 } from "@/lib/result/faceType";
 
 describe("deriveFaceType", () => {
-  it("キャリブレーション済み典型（ratio ≈ 0.92）は卵型ベース", () => {
+  it("キャリブレーション済み典型（ratio ≈ 1.29）は卵型ベース", () => {
     const score = computeScore(makeIdealLandmarks());
     expect(deriveFaceType(score)).toBe("卵型ベース");
   });
 
   it("面長寄り（faceWidthToHeight 小さめ）は面長系の文言", () => {
-    const score = computeScore(makeIdealLandmarks({ faceWidthToHeight: 0.6 }));
+    const score = computeScore(makeIdealLandmarks({ faceWidthToHeight: 1.1 }));
     const label = deriveFaceType(score);
     expect(label).toMatch(/面長/);
   });
 
   it("丸顔寄り（faceWidthToHeight 大きめ）は丸顔系の文言", () => {
-    const score = computeScore(makeIdealLandmarks({ faceWidthToHeight: 1.05 }));
+    const score = computeScore(makeIdealLandmarks({ faceWidthToHeight: 1.45 }));
     const label = deriveFaceType(score);
     expect(label).toMatch(/丸顔/);
   });

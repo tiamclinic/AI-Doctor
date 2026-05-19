@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function Header() {
   return (
-    <header className="border-border/60 bg-background/80 sticky top-0 z-50 border-b backdrop-blur-md">
+    <header className="site-chrome-header border-border/60 bg-background/80 sticky top-0 z-50 border-b backdrop-blur-md print:hidden">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
         <Link
           href="/"

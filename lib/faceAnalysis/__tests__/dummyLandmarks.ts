@@ -1,4 +1,4 @@
-import { IDEAL } from "@/lib/faceAnalysis/goldenRatio";
+import { IDEAL, SCORING_TARGET } from "@/lib/faceAnalysis/goldenRatio";
 import { TIAM_LANDMARK_INDEX } from "@/lib/faceAnalysis/landmarks";
 import type { Landmark } from "@/lib/faceAnalysis/types";
 
@@ -14,7 +14,7 @@ type OverrideOptions = Partial<{
   verticalSections: [number, number, number];
   // 顔幅 / 目幅 の比率（理想 5）
   faceWidthToEye: number;
-  // 目間 / 目幅 の比率（理想 1）
+  // 目間 / 目幅 の比率（`IDEAL.eyeSpacing` と整合）
   interEyeToEye: number;
   // 鼻幅 / 口幅 の比率（理想 1/PHI ≈ 0.618）
   noseMouthRatio: number;
@@ -24,6 +24,10 @@ type OverrideOptions = Partial<{
   lipDeviation: number;
   /** 画像左側の目（leftEye*）の x をずらす量。左右対称性テスト用 */
   leftEyeShiftX: number;
+  /** 画像左側の目の y をずらす量。目の高さ揃いテスト用 */
+  leftEyeShiftY: number;
+  /** 画像左側の口角の y をずらす量。口角の高さ揃いテスト用 */
+  leftMouthShiftY: number;
 }>;
 
 const TOTAL_POINTS = 478;
@@ -39,6 +43,8 @@ export function makeIdealLandmarks(
   const faceWidthToHeight = overrides.faceWidthToHeight ?? IDEAL.faceContour;
   const lipDeviation = overrides.lipDeviation ?? 0;
   const leftEyeShiftX = overrides.leftEyeShiftX ?? 0;
+  const leftEyeShiftY = overrides.leftEyeShiftY ?? 0;
+  const leftMouthShiftY = overrides.leftMouthShiftY ?? 0;
 
   const faceWidth = 0.5;
   const faceSpan = faceWidth / faceWidthToHeight;
@@ -85,8 +91,16 @@ export function makeIdealLandmarks(
 
   points[idx.rightEyeOuter] = { x: rightEyeOuter, y: eyeY, z: 0 };
   points[idx.rightEyeInner] = { x: rightEyeInner, y: eyeY, z: 0 };
-  points[idx.leftEyeInner] = { x: leftEyeInner + leftEyeShiftX, y: eyeY, z: 0 };
-  points[idx.leftEyeOuter] = { x: leftEyeOuter + leftEyeShiftX, y: eyeY, z: 0 };
+  points[idx.leftEyeInner] = {
+    x: leftEyeInner + leftEyeShiftX,
+    y: eyeY + leftEyeShiftY,
+    z: 0,
+  };
+  points[idx.leftEyeOuter] = {
+    x: leftEyeOuter + leftEyeShiftX,
+    y: eyeY + leftEyeShiftY,
+    z: 0,
+  };
 
   points[idx.rightAla] = { x: centerX - noseWidth / 2, y: subnasaleY, z: 0 };
   points[idx.leftAla] = { x: centerX + noseWidth / 2, y: subnasaleY, z: 0 };
@@ -98,7 +112,7 @@ export function makeIdealLandmarks(
   };
   points[idx.leftMouthCorner] = {
     x: centerX + mouthWidth / 2,
-    y: mouthY,
+    y: mouthY + leftMouthShiftY,
     z: 0,
   };
   points[idx.upperLipTop] = {
@@ -113,4 +127,17 @@ export function makeIdealLandmarks(
   };
 
   return points;
+}
+
+/** 厳しめ採点基準（`SCORING_TARGET`）に合わせたランドマーク配置 */
+export function makeScoringTargetLandmarks(
+  overrides: OverrideOptions = {},
+): Landmark[] {
+  return makeIdealLandmarks({
+    verticalSections: [1, 1, 1],
+    interEyeToEye: SCORING_TARGET.eyeSpacing,
+    noseMouthRatio: SCORING_TARGET.noseMouthRatio,
+    faceWidthToHeight: SCORING_TARGET.faceContour,
+    ...overrides,
+  });
 }

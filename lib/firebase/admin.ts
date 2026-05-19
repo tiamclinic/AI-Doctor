@@ -1,6 +1,12 @@
 import "server-only";
 
-import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
+import {
+  applicationDefault,
+  cert,
+  getApps,
+  initializeApp,
+  type App,
+} from "firebase-admin/app";
 import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 
@@ -44,7 +50,16 @@ function initFirebaseAdmin(): App {
     );
   }
 
-  return initializeApp({ projectId });
+  if (!projectId) {
+    throw new Error(
+      "FIREBASE_PROJECT_ID が未設定です。.env.local に FIREBASE_PROJECT_ID=ai-doctor-5681b を設定してください。",
+    );
+  }
+
+  return initializeApp({
+    credential: applicationDefault(),
+    projectId,
+  });
 }
 
 export function getAdminFirestore(): Firestore {
@@ -80,12 +95,22 @@ export function isFirebaseAdminConfigured(): boolean {
   return isFirestoreAdminConfigured();
 }
 
+function credentialErrorText(err: unknown): string {
+  if (!(err instanceof Error)) return String(err);
+  const parts = [err.message];
+  if (err.cause instanceof Error) parts.push(err.cause.message);
+  return parts.join(" ").toLowerCase();
+}
+
 export function isFirebaseCredentialError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  const msg = err.message.toLowerCase();
+  const msg = credentialErrorText(err);
   return (
     msg.includes("could not load the default credentials") ||
     msg.includes("unable to detect a project id") ||
-    (msg.includes("credential") && msg.includes("application default"))
+    (msg.includes("credential") && msg.includes("application default")) ||
+    msg.includes("invalid_grant") ||
+    msg.includes("invalid_rapt") ||
+    msg.includes("reauth related") ||
+    msg.includes("getting metadata from plugin failed")
   );
 }

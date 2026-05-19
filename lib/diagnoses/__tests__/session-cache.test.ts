@@ -41,6 +41,8 @@ const sample: DiagnosisSessionCache = {
       eLine: 80,
       faceContour: 80,
       bilateralSymmetry: 80,
+      eyeLevelSymmetry: 80,
+      mouthLevelSymmetry: 80,
     },
     rawValues: {
       verticalThirds: { sections: [1, 1, 1], ratios: [1, 1, 1] },
@@ -51,6 +53,8 @@ const sample: DiagnosisSessionCache = {
       faceContour: { faceWidth: 1, faceHeight: 1, ratio: 1 },
       eyePosition: { eyeY: 1, faceHeight: 1, ratio: 1 },
       bilateralSymmetry: { meanAsymmetry: 0 },
+      eyeLevelSymmetry: { eyeLevelDelta: 0 },
+      mouthLevelSymmetry: { mouthLevelDelta: 0 },
     },
   },
   diagnosisText: null,

@@ -1,19 +1,13 @@
 // 診断リクエストとレスポンスの型定義
 import { z } from "zod";
 
-import type { MetricKey } from "@/lib/faceAnalysis/goldenRatio";
+import {
+  DISPLAYED_METRIC_KEYS,
+  type DisplayedMetricKey,
+} from "@/lib/faceAnalysis/scoring";
 
-// 指標のキー
-const METRIC_KEYS = [
-  "verticalThirds",
-  "horizontalFifths",
-  "eyeSpacing",
-  "eyePosition",
-  "noseMouthRatio",
-  "eLine",
-  "faceContour",
-  "bilateralSymmetry",
-] as const satisfies readonly MetricKey[];
+/** AI 診断プロンプトに渡す指標（正面で判別力のあるもののみ） */
+const METRIC_KEYS = DISPLAYED_METRIC_KEYS satisfies readonly DisplayedMetricKey[];
 
 // スコアの型定義
 const scoreNumber = z
@@ -30,9 +24,10 @@ export const DiagnoseRequestSchema = z.object({
     eyeSpacing: scoreNumber, // 目間スコア
     eyePosition: scoreNumber, // 目の位置（縦）スコア
     noseMouthRatio: scoreNumber, // 鼻口比率スコア
-    eLine: scoreNumber, // E ラインスコア
     faceContour: scoreNumber, // 顔輪郭比率スコア
     bilateralSymmetry: scoreNumber, // 左右対称性スコア
+    eyeLevelSymmetry: scoreNumber, // 目の高さ揃いスコア
+    mouthLevelSymmetry: scoreNumber, // 口角の高さ揃いスコア
   }),
   locale: z.literal("ja").default("ja"), // 言語
 });

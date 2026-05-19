@@ -28,7 +28,7 @@ export function StaffOrAdminGuard({ children, loginNext }: StaffOrAdminGuardProp
 
   React.useEffect(() => {
     if (!isFirebaseAuthConfigured()) {
-      router.replace("/admin/login");
+      router.replace("/staff");
       return;
     }
 
@@ -43,7 +43,7 @@ export function StaffOrAdminGuard({ children, loginNext }: StaffOrAdminGuardProp
           const next = loginNext
             ? `?next=${encodeURIComponent(loginNext)}`
             : "";
-          router.replace(`/admin/login${next}`);
+          router.replace(`/staff${next}`);
         }
         return;
       }
@@ -53,7 +53,7 @@ export function StaffOrAdminGuard({ children, loginNext }: StaffOrAdminGuardProp
         setState("authorized");
       } else {
         setState("unauthorized");
-        router.replace("/admin/login?error=not_staff_or_admin");
+        router.replace("/staff?error=not_staff_or_admin");
       }
     };
 

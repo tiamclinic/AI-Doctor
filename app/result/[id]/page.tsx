@@ -10,6 +10,10 @@ import { IdealPortrait } from "@/components/IdealPortrait";
 import { DoctorEditCta } from "@/components/result/DoctorEditCta";
 import { MetricBarList } from "@/components/result/MetricBarList";
 import { PartAnalysisGrid } from "@/components/result/PartAnalysisGrid";
+import { PrintButton } from "@/components/result/PrintButton";
+import { PrintFooter } from "@/components/result/PrintFooter";
+import { PrintHeader } from "@/components/result/PrintHeader";
+import { PrintLayoutHint } from "@/components/result/PrintLayoutHint";
 import { ResultDisclaimerBanner } from "@/components/result/ResultDisclaimerBanner";
 import { ResultHero } from "@/components/result/ResultHero";
 import { ResultSectionHeader } from "@/components/result/ResultSectionHeader";
@@ -47,6 +51,13 @@ function ResultPageContent({
   } = useDoctorNote(id);
 
   const refreshHandled = React.useRef(false);
+  const [printedAt, setPrintedAt] = React.useState<Date | undefined>();
+
+  React.useEffect(() => {
+    const onBeforePrint = () => setPrintedAt(new Date());
+    window.addEventListener("beforeprint", onBeforePrint);
+    return () => window.removeEventListener("beforeprint", onBeforePrint);
+  }, []);
 
   React.useEffect(() => {
     if (searchParams.get("refresh") !== "1" || refreshHandled.current) return;
@@ -115,18 +126,26 @@ function ResultPageContent({
     : undefined;
 
   return (
-    <main className="flex flex-1 flex-col items-center px-4 py-12 sm:py-16">
-      <div className="flex w-full max-w-5xl flex-col gap-8">
+    <main className="flex flex-1 flex-col items-center px-4 py-12 sm:py-16 print:px-0 print:py-0">
+      <PrintHeader resultId={id} printedAt={printedAt} />
+      <PrintFooter />
+
+      <div className="print-report-document flex w-full max-w-5xl flex-col gap-8">
+        <div className="print:hidden flex flex-col items-end gap-1.5 sm:flex-row sm:items-start sm:justify-end">
+          <PrintButton />
+          <PrintLayoutHint />
+        </div>
+
         {fromPersistedOnly ? (
           <p
-            className="border-tiam-gold/25 bg-tiam-gold/8 text-tiam-primary rounded-lg border px-4 py-2.5 text-center text-[10px] leading-relaxed sm:text-xs"
+            className="border-tiam-gold/25 bg-tiam-gold/8 text-tiam-primary print:hidden rounded-lg border px-4 py-2.5 text-center text-[10px] leading-relaxed sm:text-xs"
             role="status"
           >
             スコアとレポートはサーバーから表示しています。写真は診断直後の同じブラウザタブでのみ保持されます（リロード後は復元できない場合があります）。
           </p>
         ) : null}
 
-        <header className="flex flex-col items-center text-center">
+        <header className="print:hidden flex flex-col items-center text-center">
           <span className="text-tiam-gold font-heading text-[10px] tracking-[0.3em] uppercase">
             TIAM Beauty AI Report
           </span>
@@ -146,7 +165,7 @@ function ResultPageContent({
 
         <ResultDisclaimerBanner />
 
-        <div className="grid items-start gap-6 lg:grid-cols-[1.05fr_1fr]">
+        <div className="result-print-page-one grid items-start gap-6 lg:grid-cols-[1.05fr_1fr]">
           <ResultHero
             photoDataUrl={photoDataUrl}
             detectResult={detectResult}
@@ -161,21 +180,20 @@ function ResultPageContent({
           </div>
         </div>
 
-        <section>
+        <section className="result-print-page-two">
           <ResultSectionHeader
             title="パーツごとの詳細分析"
             subtitle="TIAM AI の参考短文と、公開済みの当院医師所見を併記します。"
           />
           <PartAnalysisGrid scoreResult={scoreResult} doctorNote={doctorNote} />
           {doctorNoteLoading ? (
-            <p className="text-muted-foreground mt-3 text-center text-xs">
+            <p className="text-muted-foreground print:hidden mt-3 text-center text-xs">
               医師所見を読み込み中…
             </p>
           ) : null}
-        </section>
 
         {diagnosisText ? (
-          <section>
+          <section className="mt-8">
             <ResultSectionHeader
               title="総評・詳細レポート"
               subtitle={
@@ -191,8 +209,9 @@ function ResultPageContent({
             />
           </section>
         ) : null}
+        </section>
 
-        <Card className="border-border/80" suppressHydrationWarning>
+        <Card className="border-border/80 print:hidden" suppressHydrationWarning>
           <CardContent className="flex flex-col gap-5 p-6 sm:p-8">
             <div className="flex flex-col items-center text-center">
               <div className="flex items-center gap-2">
@@ -219,7 +238,7 @@ function ResultPageContent({
         </Card>
 
         {photoDataUrl ? (
-          <Card className="border-border/80">
+          <Card className="border-border/80 print:hidden">
             <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:p-8">
               <div className="flex items-center gap-2">
                 <Wand2 className="text-tiam-gold size-4" />
@@ -235,7 +254,7 @@ function ResultPageContent({
           </Card>
         ) : null}
 
-        <Card className="border-border/80">
+        <Card className="border-border/80 print:hidden">
           <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:p-8">
             <div className="flex items-center gap-2">
               <Share2 className="text-tiam-gold size-4" />
@@ -255,7 +274,7 @@ function ResultPageContent({
           </CardContent>
         </Card>
 
-        <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+        <div className="print:hidden flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
           <Button type="button" variant="outline" onClick={handleStartOver}>
             別の写真でもう一度診断
           </Button>
@@ -267,7 +286,7 @@ function ResultPageContent({
           </Link>
         </div>
 
-        <footer className="text-muted-foreground mt-2 text-center text-[10px] leading-relaxed">
+        <footer className="text-muted-foreground print:hidden mt-2 text-center text-[10px] leading-relaxed">
           {RESULT_DISCLAIMER}
           <br />
           {RESULT_FOOTER_COPY}

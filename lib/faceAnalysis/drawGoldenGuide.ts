@@ -153,7 +153,7 @@ export function drawGoldenRatioGuide(
   const fsTop = Math.max(13, Math.min(19, w / 32));
   const fsTop2 = Math.max(12, fsTop - 1);
   const topLine1 = `横五分割比 ${raw.horizontalFifths.ratio.toFixed(2)}（理想1.0）`;
-  const topLine2 = `目間比 ${raw.eyeSpacing.ratio.toFixed(2)}（理想1.0）`;
+  const topLine2 = `目間比 ${raw.eyeSpacing.ratio.toFixed(2)}（理想 ${IDEAL.eyeSpacing.toFixed(2)}）`;
   const topLine3 = `鼻口比 ${raw.noseMouthRatio.ratio.toFixed(3)}（理想 ${IDEAL.noseMouthRatio.toFixed(2)}）`;
 
   drawLabel(ctx, 8, 8, topLine1, "left", fsTop, "top");

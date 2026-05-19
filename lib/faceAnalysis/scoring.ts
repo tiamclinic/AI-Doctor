@@ -1,8 +1,7 @@
 // 黄金比スコアリングを行うための関数
 import {
   computeRawMetrics,
-  IDEAL,
-  TYPICAL_VERTICAL_THIRDS,
+  SCORING_TARGET,
   type MetricKey,
   type RawMetrics,
 } from "@/lib/faceAnalysis/goldenRatio";
@@ -14,73 +13,104 @@ export type ScoreResult = {
   rawValues: RawMetrics; // 生値
 };
 
-// 加重平均の重み（合計 1.0）。T-18 で eyePosition / bilateralSymmetry を追加し再配分。
+// 加重平均の重み（合計 1.0）。eLine は正面では判別力がないため 0（算出のみ保持）。
 export const METRIC_WEIGHTS: Record<MetricKey, number> = {
-  verticalThirds: 0.17,
-  horizontalFifths: 0.12,
-  eyeSpacing: 0.12,
-  eyePosition: 0.09,
-  noseMouthRatio: 0.17,
-  eLine: 0.12,
-  faceContour: 0.12,
-  bilateralSymmetry: 0.09,
+  verticalThirds: 0.15,
+  horizontalFifths: 0.09,
+  eyeSpacing: 0.09,
+  eyePosition: 0.07,
+  noseMouthRatio: 0.15,
+  eLine: 0,
+  faceContour: 0.1,
+  bilateralSymmetry: 0.07,
+  eyeLevelSymmetry: 0.15,
+  mouthLevelSymmetry: 0.13,
 };
+
+const METRIC_KEYS = Object.keys(METRIC_WEIGHTS) as MetricKey[];
+
+/** UI・AI診断・シェアカードに載せる指標（正面で実際にばらつくもののみ） */
+export const DISPLAYED_METRIC_KEYS = [
+  "verticalThirds",
+  "horizontalFifths",
+  "eyeSpacing",
+  "eyePosition",
+  "noseMouthRatio",
+  "faceContour",
+  "bilateralSymmetry",
+  "eyeLevelSymmetry",
+  "mouthLevelSymmetry",
+] as const satisfies readonly MetricKey[];
+
+export type DisplayedMetricKey = (typeof DISPLAYED_METRIC_KEYS)[number];
+
+/** 総合スコアの加重平均に使う指標（重み > 0） */
+export const WEIGHTED_METRIC_KEYS = DISPLAYED_METRIC_KEYS.filter(
+  (key) => METRIC_WEIGHTS[key] > 0,
+);
+
+export function pickDisplayedScores(
+  scores: Record<MetricKey, number>,
+): Record<DisplayedMetricKey, number> {
+  return Object.fromEntries(
+    DISPLAYED_METRIC_KEYS.map((key) => [key, scores[key]]),
+  ) as Record<DisplayedMetricKey, number>;
+}
 
 /**
  * 乖離ペナルティの全体スケール（1.0=厳しめ、小さいほど甘め）。
- * 正面写真の典型では 80 点台が出るよう 0.72 前後で調整。
+ * 表示用典型値（IDEAL）と採点基準（SCORING_TARGET）を分離したうえで 0.88 前後。
  */
-export const SCORE_PENALTY_SCALE = 0.72;
+export const SCORE_PENALTY_SCALE = 0.88;
 
 // 正規化係数 k: |相対乖離| × k × SCORE_PENALTY_SCALE × 100 を 100 から引く。
 const K: Record<MetricKey, number> = {
   verticalThirds: 2.2,
   horizontalFifths: 1.9,
   eyeSpacing: 1.7,
-  eyePosition: 1.4,
+  eyePosition: 1.2,
   noseMouthRatio: 2.0,
   eLine: 1.8,
   faceContour: 1.9,
-  /** meanAsymmetry は顔幅正規化済の小さな量のため k を大きめに */
   bilateralSymmetry: 18,
+  eyeLevelSymmetry: 16,
+  mouthLevelSymmetry: 18,
 };
 
 // 下限・上限（極端な顔でも 30 点を下回らない）
-const MIN_SCORE = 30; // 最低スコア
-const MAX_SCORE = 100; // 最高スコア
+const MIN_SCORE = 30;
+const MAX_SCORE = 100;
 
-const clamp = (v: number, min = MIN_SCORE, max = MAX_SCORE) => // スコアをクランプ
+const clamp = (v: number, min = MIN_SCORE, max = MAX_SCORE) =>
   Math.max(min, Math.min(max, v));
 
-// 比率 (実測 / 理想) または相対乖離から 0-100 を算出する共通関数
 const scoreFromDeviation = (deviation: number, key: MetricKey): number => {
   const raw =
     100 - Math.abs(deviation) * K[key] * SCORE_PENALTY_SCALE * 100;
   return clamp(raw);
 };
 
-// 縦三分割: 眉間基準の典型比率 [17,39,44] からの平均乖離
+// 縦三分割: 採点基準は 1:1:1（SCORING_TARGET）
 const scoreVerticalThirds = (raw: RawMetrics["verticalThirds"]): number => {
   const dev =
     raw.ratios.reduce(
-      (sum, r, i) => sum + Math.abs(r - TYPICAL_VERTICAL_THIRDS[i]!),
+      (sum, r, i) =>
+        sum + Math.abs(r - SCORING_TARGET.verticalThirds[i]!),
       0,
     ) / 3;
   return scoreFromDeviation(dev, "verticalThirds");
 };
 
-// 横五分割 / 目間 / 顔輪郭比 / 鼻口比: 1 つの比率に対する乖離
-const scoreRatio = ( // 横五分割 / 目間 / 顔輯/ 鼻口比: 1 つの比率に対する乖離
+const scoreRatio = (
   actual: number,
-  ideal: number,
+  target: number,
   key: MetricKey,
 ): number => {
-  if (!Number.isFinite(actual) || ideal === 0) return MIN_SCORE; // スコアを計算
-  const dev = (actual - ideal) / ideal; // 分散を計算
+  if (!Number.isFinite(actual) || target === 0) return MIN_SCORE;
+  const dev = (actual - target) / target;
   return scoreFromDeviation(dev, key);
 };
 
-// E ライン: 上下唇の平均乖離。値は顔幅で正規化済（0 が理想）
 const scoreELine = (raw: RawMetrics["eLine"]): number => {
   const dev = (raw.upperLipDeviation + raw.lowerLipDeviation) / 2;
   return scoreFromDeviation(dev, "eLine");
@@ -89,43 +119,50 @@ const scoreELine = (raw: RawMetrics["eLine"]): number => {
 const scoreBilateralSymmetry = (raw: RawMetrics["bilateralSymmetry"]): number =>
   scoreFromDeviation(raw.meanAsymmetry, "bilateralSymmetry");
 
+const scoreEyeLevelSymmetry = (raw: RawMetrics["eyeLevelSymmetry"]): number =>
+  scoreFromDeviation(raw.eyeLevelDelta, "eyeLevelSymmetry");
+
+const scoreMouthLevelSymmetry = (raw: RawMetrics["mouthLevelSymmetry"]): number =>
+  scoreFromDeviation(raw.mouthLevelDelta, "mouthLevelSymmetry");
+
 export function scoreRawMetrics(raw: RawMetrics): ScoreResult {
   const scores: Record<MetricKey, number> = {
     verticalThirds: scoreVerticalThirds(raw.verticalThirds),
     horizontalFifths: scoreRatio(
       raw.horizontalFifths.ratio,
-      IDEAL.horizontalFifths,
+      SCORING_TARGET.horizontalFifths,
       "horizontalFifths",
     ),
     eyeSpacing: scoreRatio(
       raw.eyeSpacing.ratio,
-      IDEAL.eyeSpacing,
+      SCORING_TARGET.eyeSpacing,
       "eyeSpacing",
     ),
     eyePosition: scoreRatio(
       raw.eyePosition.ratio,
-      IDEAL.eyePosition,
+      SCORING_TARGET.eyePosition,
       "eyePosition",
     ),
     noseMouthRatio: scoreRatio(
       raw.noseMouthRatio.ratio,
-      IDEAL.noseMouthRatio,
+      SCORING_TARGET.noseMouthRatio,
       "noseMouthRatio",
     ),
     eLine: scoreELine(raw.eLine),
     faceContour: scoreRatio(
       raw.faceContour.ratio,
-      IDEAL.faceContour,
+      SCORING_TARGET.faceContour,
       "faceContour",
     ),
     bilateralSymmetry: scoreBilateralSymmetry(raw.bilateralSymmetry),
+    eyeLevelSymmetry: scoreEyeLevelSymmetry(raw.eyeLevelSymmetry),
+    mouthLevelSymmetry: scoreMouthLevelSymmetry(raw.mouthLevelSymmetry),
   };
 
-  const total =
-    (Object.keys(scores) as MetricKey[]).reduce(
-      (acc, key) => acc + scores[key] * METRIC_WEIGHTS[key],
-      0,
-    );
+  const total = WEIGHTED_METRIC_KEYS.reduce(
+    (acc, key) => acc + scores[key] * METRIC_WEIGHTS[key],
+    0,
+  );
 
   return {
     totalScore: roundTo(total, 1),
@@ -138,6 +175,8 @@ export function scoreRawMetrics(raw: RawMetrics): ScoreResult {
       eLine: roundTo(scores.eLine, 1),
       faceContour: roundTo(scores.faceContour, 1),
       bilateralSymmetry: roundTo(scores.bilateralSymmetry, 1),
+      eyeLevelSymmetry: roundTo(scores.eyeLevelSymmetry, 1),
+      mouthLevelSymmetry: roundTo(scores.mouthLevelSymmetry, 1),
     },
     rawValues: raw,
   };
@@ -146,6 +185,80 @@ export function scoreRawMetrics(raw: RawMetrics): ScoreResult {
 export function computeScore(landmarks: Landmark[]): ScoreResult {
   const raw = computeRawMetrics(landmarks);
   return scoreRawMetrics(raw);
+}
+
+export function isCompleteScoreResult(result: {
+  scores: Partial<Record<MetricKey, number>>;
+}): result is { scores: Record<MetricKey, number> } {
+  return METRIC_KEYS.every((key) => {
+    const value = result.scores[key];
+    return typeof value === "number" && Number.isFinite(value);
+  });
+}
+
+function coerceRawMetrics(partial: Partial<RawMetrics>): RawMetrics {
+  const asym = partial.bilateralSymmetry?.meanAsymmetry ?? 0.02;
+  const verticalThirds = partial.verticalThirds ?? {
+    sections: [1, 1, 1] as [number, number, number],
+    ratios: [...SCORING_TARGET.verticalThirds] as [number, number, number],
+  };
+
+  return {
+    verticalThirds,
+    horizontalFifths: partial.horizontalFifths ?? {
+      faceWidth: 1,
+      eyeWidth: 1,
+      ratio: SCORING_TARGET.horizontalFifths,
+    },
+    eyeSpacing: partial.eyeSpacing ?? {
+      interEye: 1,
+      eyeWidth: 1,
+      ratio: SCORING_TARGET.eyeSpacing,
+    },
+    eyePosition: partial.eyePosition ?? {
+      eyeY: 0,
+      faceHeight: 1,
+      ratio: verticalThirds.ratios[0] ?? SCORING_TARGET.eyePosition,
+    },
+    noseMouthRatio: partial.noseMouthRatio ?? {
+      noseWidth: 1,
+      mouthWidth: 1,
+      ratio: SCORING_TARGET.noseMouthRatio,
+    },
+    eLine: partial.eLine ?? { upperLipDeviation: 0, lowerLipDeviation: 0 },
+    faceContour: partial.faceContour ?? {
+      faceWidth: 1,
+      faceHeight: 1,
+      ratio: SCORING_TARGET.faceContour,
+    },
+    bilateralSymmetry: partial.bilateralSymmetry ?? { meanAsymmetry: asym },
+    eyeLevelSymmetry: partial.eyeLevelSymmetry ?? { eyeLevelDelta: asym },
+    mouthLevelSymmetry: partial.mouthLevelSymmetry ?? { mouthLevelDelta: asym },
+  };
+}
+
+/** 旧キャッシュなど欠損キーを補完。ランドマークがあれば再計算を優先 */
+export function normalizeScoreResult(
+  result: {
+    totalScore: number;
+    scores: Partial<Record<MetricKey, number>>;
+    rawValues: Partial<RawMetrics>;
+  },
+  landmarks?: Landmark[] | null,
+): ScoreResult {
+  if (isCompleteScoreResult(result)) {
+    return {
+      totalScore: result.totalScore,
+      scores: result.scores,
+      rawValues: result.rawValues as RawMetrics,
+    };
+  }
+
+  if (landmarks && landmarks.length > 0) {
+    return computeScore(landmarks);
+  }
+
+  return scoreRawMetrics(coerceRawMetrics(result.rawValues ?? {}));
 }
 
 export function roundTo(value: number, digits: number): number {
@@ -162,10 +275,6 @@ export const METRIC_LABELS: Record<MetricKey, string> = {
   eLine: "E ライン整合度",
   faceContour: "顔輪郭比率",
   bilateralSymmetry: "左右対称性",
+  eyeLevelSymmetry: "目の高さ揃い",
+  mouthLevelSymmetry: "口角の高さ揃い",
 };
-
-// チューニングメモ:
-// - 指標は「理想値からの相対乖離」または顔幅正規化済の絶対乖離で 0-100 に正規化し、加重平均する。
-// - 縦三分割・目間・鼻口は TYPICAL_* / IDEAL で正面典型にキャリブレーション。
-// - SCORE_PENALTY_SCALE=0.72 で全体をやや甘めに（80 点台が現実的に出る想定）。
-// - MIN_SCORE=30, MAX_SCORE=100 で下限ガード。

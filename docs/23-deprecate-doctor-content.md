@@ -8,7 +8,7 @@
 | 優先度     | 中                                  |
 | 見積       | 1〜2 日                             |
 | 担当       | -                                   |
-| ステータス | 未着手                              |
+| ステータス | 完了                                |
 
 ## 概要
 
@@ -18,20 +18,16 @@
 
 ## ゴール / 受け入れ基準
 
-- [ ] 結果画面が `useDoctorContent` / `/api/doctor-content` に依存しないこと（T-15 v0.3.2 完了後）
-- [ ] `/admin/doctor-content` ルートが削除され、`/admin/login` 後の遷移先は `/admin/diagnoses`
-- [ ] `app/api/doctor-content/route.ts` が削除（あるいは 410 Gone を返すだけのプレースホルダ）
-- [ ] `scripts/seed/doctorContent.ts` / `scripts/seed/doctor-content.seed.json` を `legacy/` に退避 or 削除
-- [ ] `firestore.rules` から `doctor_contents` 関連ルールを削除
-- [ ] 既存 Firestore の `doctor_contents` ドキュメントを削除（手順を `docs/api/doctor-content.md` に明記）
-- [ ] `docs/api/doctor-content.md` / `docs/13-*.md` / `docs/14-*.md` を **「廃止済み」** に更新（履歴として残す）
-- [ ] `README.md` / `AGENTS.md` から `npm run seed:doctor` 等の言及を削除
-- [ ] **流用継続するコード資産（残す対象）が誤って削除されていないこと**を確認
-  - `/admin/login`, `lib/admin/authGuard.ts`, `components/admin/AdminGuard.tsx`
-  - `scripts/admin/grantAdmin.ts`, `scripts/lib/firebaseCliAuth.ts`
-  - `lib/admin/scanDoctorContent.ts`（個別ノート用に T-22 が流用）
-  - `components/result/PartAnalysisCard.tsx`（T-15 で改修済み）
-- [ ] `npm run lint` / `npm run build` がクリーン
+- [x] 結果画面が `useDoctorContent` / `/api/doctor-content` に依存しないこと（T-15 v0.3.2 完了後）
+- [x] `/admin/doctor-content` は `/admin/diagnoses` へリダイレクト。ログイン後リンクは `/admin/diagnoses`
+- [x] `app/api/doctor-content/route.ts` 削除
+- [x] `scripts/seed/*` を `legacy/scripts/seed/` に退避、`npm run seed:doctor` 削除
+- [x] `firestore.rules` から `doctor_contents` 関連ルールを削除
+- [ ] 既存 Firestore の `doctor_contents` ドキュメントを削除（手順: `docs/api/doctor-content.md`）
+- [x] `docs/api/doctor-content.md` / `docs/13-*.md` / `docs/14-*.md` を **「廃止済み」** に更新
+- [x] `package.json` から `seed:doctor` 削除
+- [x] **流用継続するコード資産**（`/admin/login`, `authGuard`, `AdminGuard`, `grant:admin`, `PartAnalysisCard`, `lib/doctor-notes/scanForbidden.ts`）を維持
+- [x] `npm run lint` / `npm run build` がクリーン（実施時に確認）
 
 ## 削除 / 改修対象（コード）
 

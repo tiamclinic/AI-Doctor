@@ -1,6 +1,14 @@
 import { z } from "zod";
 
+import { DISPLAYED_METRIC_KEYS } from "@/lib/faceAnalysis/scoring";
+
 const ScoreNumber = z.number().min(0).max(100);
+
+const displayedScoresSchema = z.object(
+  Object.fromEntries(
+    DISPLAYED_METRIC_KEYS.map((key) => [key, ScoreNumber]),
+  ) as Record<(typeof DISPLAYED_METRIC_KEYS)[number], typeof ScoreNumber>,
+);
 
 // dataURL or base64 文字列を受け取る（最大 ~10MB を想定）
 const DataUrlString = z
@@ -17,16 +25,7 @@ const DataUrlString = z
 
 export const PortraitRequestSchema = z.object({
   imageBase64: DataUrlString,
-  scores: z.object({
-    verticalThirds: ScoreNumber,
-    horizontalFifths: ScoreNumber,
-    eyeSpacing: ScoreNumber,
-    eyePosition: ScoreNumber,
-    noseMouthRatio: ScoreNumber,
-    eLine: ScoreNumber,
-    faceContour: ScoreNumber,
-    bilateralSymmetry: ScoreNumber,
-  }),
+  scores: displayedScoresSchema,
   consent: z.literal(true, {
     message: "OpenAI への写真送信に同意していません。",
   }),

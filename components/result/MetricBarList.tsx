@@ -1,30 +1,30 @@
 "use client";
 
-import type { MetricKey } from "@/lib/faceAnalysis/goldenRatio";
+import { IDEAL } from "@/lib/faceAnalysis/goldenRatio";
 import { PHI } from "@/lib/faceAnalysis/landmarks";
-import type { ScoreResult } from "@/lib/faceAnalysis/scoring";
-
-const METRIC_ORDER: MetricKey[] = [
-  "verticalThirds",
-  "horizontalFifths",
-  "eyeSpacing",
-  "eyePosition",
-  "noseMouthRatio",
-  "eLine",
-  "faceContour",
-  "bilateralSymmetry",
-];
+import {
+  DISPLAYED_METRIC_KEYS,
+  type DisplayedMetricKey,
+  type ScoreResult,
+} from "@/lib/faceAnalysis/scoring";
 
 /** モック準拠の短いラベル + 理想値（カッコ内） */
-const METRIC_LINE_LABELS: Record<MetricKey, { name: string; ideal: string }> = {
+const METRIC_LINE_LABELS: Record<DisplayedMetricKey, { name: string; ideal: string }> = {
   verticalThirds: { name: "縦の比率", ideal: "1 : 1 : 1" },
   horizontalFifths: { name: "横の比率", ideal: "1 : 1 : 1 : 1 : 1" },
-  eyeSpacing: { name: "目の間隔", ideal: "目幅と同等" },
+  eyeSpacing: {
+    name: "目の間隔",
+    ideal: `目間÷目幅 ${IDEAL.eyeSpacing.toFixed(2)}`,
+  },
   eyePosition: { name: "目の縦位置", ideal: "眉間〜顎の目帯位置" },
   noseMouthRatio: { name: "鼻口比率", ideal: `1 : ${PHI.toFixed(3)}` },
-  eLine: { name: "Eライン整合度", ideal: "鼻先 — 顎先 軸上" },
-  faceContour: { name: "顔の輪郭比", ideal: "1 : 1.46" },
+  faceContour: {
+    name: "顔の輪郭比",
+    ideal: `顔幅÷顔長 ${IDEAL.faceContour.toFixed(2)}`,
+  },
   bilateralSymmetry: { name: "左右対称性", ideal: "左右差が小さい" },
+  eyeLevelSymmetry: { name: "目の高さ揃い", ideal: "左右の目が同じ高さ" },
+  mouthLevelSymmetry: { name: "口角の高さ揃い", ideal: "左右口角が同じ高さ" },
 };
 
 type MetricBarListProps = {
@@ -44,7 +44,7 @@ export function MetricBarList({ result, showHeader = false }: MetricBarListProps
         </div>
       ) : null}
       <ul className="flex flex-col gap-3.5">
-        {METRIC_ORDER.map((key) => {
+        {DISPLAYED_METRIC_KEYS.map((key) => {
           const score = result.scores[key];
           const width = Math.max(0, Math.min(100, score));
           const { name, ideal } = METRIC_LINE_LABELS[key];

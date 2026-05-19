@@ -21,6 +21,8 @@ const metricScoresSchema = z.object({
   eLine: scoreNumber,
   faceContour: scoreNumber,
   bilateralSymmetry: scoreNumber,
+  eyeLevelSymmetry: scoreNumber,
+  mouthLevelSymmetry: scoreNumber,
 });
 
 export const RawMetricsSchema = z.object({
@@ -60,6 +62,12 @@ export const RawMetricsSchema = z.object({
   bilateralSymmetry: z.object({
     meanAsymmetry: z.number(),
   }),
+  eyeLevelSymmetry: z.object({
+    eyeLevelDelta: z.number(),
+  }),
+  mouthLevelSymmetry: z.object({
+    mouthLevelDelta: z.number(),
+  }),
 });
 
 export const ScoreResultSchema = z.object({
@@ -98,9 +106,24 @@ export const DiagnosisPatchBodySchema = z.object({
 
 export type DiagnosisPatchBody = z.infer<typeof DiagnosisPatchBodySchema>;
 
+export const DiagnosisNoteStatusSchema = z.enum(["none", "draft", "published"]);
+export type DiagnosisNoteStatus = z.infer<typeof DiagnosisNoteStatusSchema>;
+
+export const DiagnosisListItemSchema = DiagnosisRecordSchema.extend({
+  noteStatus: DiagnosisNoteStatusSchema,
+});
+export type DiagnosisListItem = z.infer<typeof DiagnosisListItemSchema>;
+
 export const DiagnosesListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(30),
+  cursor: z.string().min(1).optional(),
 });
+
+export const DiagnosesListResponseSchema = z.object({
+  items: z.array(DiagnosisListItemSchema),
+  nextCursor: z.string().nullable(),
+});
+export type DiagnosesListResponse = z.infer<typeof DiagnosesListResponseSchema>;
 
 export type DiagnosesApiError = {
   error:

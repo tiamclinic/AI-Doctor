@@ -1,5 +1,8 @@
 import type { DiagnoseResponse } from "@/lib/diagnosis/types";
-import type { ScoreResult } from "@/lib/faceAnalysis/scoring";
+import {
+  pickDisplayedScores,
+  type ScoreResult,
+} from "@/lib/faceAnalysis/scoring";
 import type { ShareCardRequest } from "@/lib/share-card/types";
 
 export type RequestShareCardResult =
@@ -15,7 +18,7 @@ export function buildShareCardRequest(
 ): ShareCardRequest {
   return {
     totalScore: score.totalScore,
-    scores: score.scores,
+    scores: pickDisplayedScores(score.scores),
     topStrength: diagnosis?.strengths?.[0]
       ? truncate(diagnosis.strengths[0], 80)
       : undefined,

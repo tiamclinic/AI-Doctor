@@ -1,5 +1,6 @@
 // 黄金比スコアリングを行うための関数
 import {
+  PHI,
   TIAM_BILATERAL_POINT_PAIRS,
   TIAM_LANDMARK_INDEX,
 } from "@/lib/faceAnalysis/landmarks";
@@ -14,7 +15,9 @@ export type MetricKey =
   | "noseMouthRatio"
   | "eLine"
   | "faceContour"
-  | "bilateralSymmetry";
+  | "bilateralSymmetry"
+  | "eyeLevelSymmetry"
+  | "mouthLevelSymmetry";
 
 // 生値を管理するための型
 export type RawMetrics = {
@@ -34,6 +37,10 @@ export type RawMetrics = {
   eyePosition: { eyeY: number; faceHeight: number; ratio: number };
   // 左右対称性: 各左右ペアの中点 x が顔の左右中点からずれる量の平均（顔幅で正規化、0 が理想）
   bilateralSymmetry: { meanAsymmetry: number };
+  // 左右の目の高さ差（各眼中心 y の差を顔長で正規化、0 が理想）
+  eyeLevelSymmetry: { eyeLevelDelta: number };
+  // 左右口角の高さ差（顔長で正規化、0 が理想）
+  mouthLevelSymmetry: { mouthLevelDelta: number };
 };
 
 /**
@@ -49,16 +56,43 @@ export const TYPICAL_VERTICAL_THIRDS = [0.17, 0.39, 0.44] as const;
 export const IDEAL = {
   verticalThirds: TYPICAL_VERTICAL_THIRDS,
   horizontalFifths: 1.0,
-  /** 目間/目幅。正面ランドマークでは 1.0 より狭めに出やすい */
-  eyeSpacing: 0.72,
+  /**
+   * 目間/目幅（内眼角間 ÷ 片目幅）。
+   * MediaPipe 478 点の正面メッシュでは解剖学的 1.0 より大きく出やすい（実サンプル中央値 ≈1.39）。
+   */
+  eyeSpacing: 1.39,
   /**
    * 目帯の縦位置（眉間〜顎）。生値は verticalThirds の上段比率と同じ。
    */
   eyePosition: TYPICAL_VERTICAL_THIRDS[0],
   /** 鼻幅/口幅。黄金比 1:φ より正面メッシュではやや大きめに出やすい */
   noseMouthRatio: 0.78,
-  /** 顔幅:顔長（眉間〜顎）。1:1.46 を生え際基準から眉間基準へ換算し、典型を微調整 */
-  faceContour: 0.92,
+  /**
+   * 顔幅÷顔長（眉間〜顎）。
+   * MediaPipe 正面メッシュの典型は理論 1:1.46（≈0.69）より大きく出やすい（実サンプル中央値 ≈1.29）。
+   */
+  faceContour: 1.29,
+} as const;
+
+/**
+ * 黄金比・解剖学寄りの採点基準（表示用 `IDEAL` とは別。0–100 点の差別化に使う）。
+ * 顔輪郭だけは理論 1:1.46（≈0.69）をそのまま使うと MediaPipe 眉間〜顎の生値（≈1.2〜1.4）と
+ * スケールが合わず常に下限 30 点になるため、典型よりやや卵型寄りの 1.15 を採点基準にする。
+ */
+export const SCORING_TARGET = {
+  verticalThirds: [1 / 3, 1 / 3, 1 / 3] as const,
+  horizontalFifths: 1.0,
+  /** 目間＝目幅（正面の整い基準） */
+  eyeSpacing: 1.0,
+  /**
+   * 目帯の縦位置（眉間〜顎の上段比率）。理論 1/3 は MediaPipe 典型（≈0.17）と尺度不一致のため
+   * 典型値を採点基準にし、やや甘めに評価する。
+   */
+  eyePosition: TYPICAL_VERTICAL_THIRDS[0],
+  /** 鼻幅/口幅 ≒ 1:φ */
+  noseMouthRatio: 1 / PHI,
+  /** 顔幅÷顔長。典型 1.29 より厳しめの卵型寄り基準（理論 1/1.46 はメッシュ尺度と非整合） */
+  faceContour: 1.15,
 } as const;
 
 const requirePoint = (landmarks: Landmark[], index: number): Landmark => {
@@ -198,6 +232,18 @@ export function computeRawMetrics(landmarks: Landmark[]): RawMetrics {
     meanAsymmetry: asymCount === 0 ? 0 : asymSum / asymCount,
   };
 
+  const rightEyeY = (reOuter.y + reInner.y) / 2;
+  const leftEyeY = (leOuter.y + leInner.y) / 2;
+  const eyeLevelSymmetry = {
+    eyeLevelDelta:
+      faceHeight === 0 ? 0 : Math.abs(leftEyeY - rightEyeY) / faceHeight,
+  };
+
+  const mouthLevelSymmetry = {
+    mouthLevelDelta:
+      faceHeight === 0 ? 0 : Math.abs(lMouth.y - rMouth.y) / faceHeight,
+  };
+
   return {
     verticalThirds,
     horizontalFifths,
@@ -207,5 +253,7 @@ export function computeRawMetrics(landmarks: Landmark[]): RawMetrics {
     eLine,
     faceContour,
     bilateralSymmetry,
+    eyeLevelSymmetry,
+    mouthLevelSymmetry,
   };
 }

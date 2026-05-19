@@ -5,7 +5,7 @@ import * as React from "react";
 import { useDiagnosisRecord } from "@/hooks/useDiagnosisRecord";
 import { useDiagnosisSessionCache } from "@/hooks/useDiagnosisSessionCache";
 import type { DiagnoseResponse } from "@/lib/diagnosis/types";
-import type { ScoreResult } from "@/lib/faceAnalysis/scoring";
+import { normalizeScoreResult, type ScoreResult } from "@/lib/faceAnalysis/scoring";
 import type { DetectResult } from "@/lib/faceAnalysis/types";
 import { useDiagnosisStore } from "@/lib/store/diagnosis-store";
 
@@ -32,6 +32,13 @@ function pickDiagnosisText(
   return null;
 }
 
+function withNormalizedScores(
+  scoreResult: ScoreResult,
+  detectResult: DetectResult | null,
+): ScoreResult {
+  return normalizeScoreResult(scoreResult, detectResult?.landmarks);
+}
+
 /**
  * 結果画面用。優先順: Zustand → sessionStorage → GET /api/diagnoses/{id}
  */
@@ -54,27 +61,32 @@ export function useResultPageSession(resultId: string): ResultPageSessionState {
 
   return React.useMemo((): ResultPageSessionState => {
     if (storeMatches && scoreResult) {
+      const resolvedDetect = detectResult;
       return {
         status: "ready",
-        scoreResult,
+        scoreResult: withNormalizedScores(scoreResult, resolvedDetect),
         diagnosisText,
         photoDataUrl,
-        detectResult,
+        detectResult: resolvedDetect,
         fromPersistedOnly: false,
       };
     }
 
     if (sessionCache) {
+      const resolvedDetect = sessionCache.detectResult ?? detectResult;
       return {
         status: "ready",
-        scoreResult: sessionCache.scoreResult,
+        scoreResult: withNormalizedScores(
+          sessionCache.scoreResult,
+          resolvedDetect,
+        ),
         diagnosisText: pickDiagnosisText(
           diagnosisText,
           sessionCache.diagnosisText,
           apiRecord?.diagnosisText,
         ),
         photoDataUrl: sessionCache.photoDataUrl,
-        detectResult: sessionCache.detectResult ?? detectResult,
+        detectResult: resolvedDetect,
         fromPersistedOnly: false,
       };
     }
@@ -84,7 +96,7 @@ export function useResultPageSession(resultId: string): ResultPageSessionState {
         photoDataUrl ?? apiRecord.thumbnailUrl ?? null;
       return {
         status: "ready",
-        scoreResult: apiRecord.scoreResult,
+        scoreResult: withNormalizedScores(apiRecord.scoreResult, detectResult),
         diagnosisText: pickDiagnosisText(diagnosisText, apiRecord.diagnosisText),
         photoDataUrl: photo,
         detectResult,

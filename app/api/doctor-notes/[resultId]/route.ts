@@ -18,7 +18,7 @@ import {
   DoctorNoteSchema,
   type DoctorNotePutResponse,
 } from "@/lib/doctor-notes/types";
-import type { DoctorContentError } from "@/lib/doctor/types";
+import type { DoctorContentError } from "@/lib/api/errors";
 import { isFirestoreAdminConfigured } from "@/lib/firebase/admin";
 
 const FIRESTORE_SETUP_HINT =

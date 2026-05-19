@@ -272,6 +272,12 @@ function DiagnosisEditPageInner() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
+            href="/admin/diagnoses"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            診断一覧
+          </Link>
+          <Link
             href={`/result/${resultId}`}
             className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           >

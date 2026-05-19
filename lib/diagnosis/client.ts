@@ -1,4 +1,7 @@
-import type { ScoreResult } from "@/lib/faceAnalysis/scoring";
+import {
+  pickDisplayedScores,
+  type ScoreResult,
+} from "@/lib/faceAnalysis/scoring";
 import {
   type DiagnoseError,
   type DiagnoseResponse,
@@ -18,7 +21,7 @@ export async function requestDiagnosis(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       totalScore: score.totalScore,
-      scores: score.scores,
+      scores: pickDisplayedScores(score.scores),
       locale: "ja",
     }),
     signal,

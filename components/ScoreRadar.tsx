@@ -1,33 +1,27 @@
 "use client";
 
-import type { MetricKey } from "@/lib/faceAnalysis/goldenRatio";
-import { METRIC_LABELS, type ScoreResult } from "@/lib/faceAnalysis/scoring";
-
-const METRIC_ORDER: MetricKey[] = [
-  "verticalThirds",
-  "horizontalFifths",
-  "eyeSpacing",
-  "eyePosition",
-  "noseMouthRatio",
-  "eLine",
-  "faceContour",
-  "bilateralSymmetry",
-];
+import {
+  DISPLAYED_METRIC_KEYS,
+  type DisplayedMetricKey,
+  METRIC_LABELS,
+  type ScoreResult,
+} from "@/lib/faceAnalysis/scoring";
 
 type ScoreRadarProps = {
   result: ScoreResult;
   size?: number;
 };
 
-const SHORT_LABEL: Record<MetricKey, string> = {
+const SHORT_LABEL: Record<DisplayedMetricKey, string> = {
   verticalThirds: "縦三分割",
   horizontalFifths: "横五分割",
   eyeSpacing: "目間",
   eyePosition: "目の縦位置",
   noseMouthRatio: "鼻口比",
-  eLine: "Eライン",
   faceContour: "顔輪郭比",
   bilateralSymmetry: "左右対称",
+  eyeLevelSymmetry: "目の高さ",
+  mouthLevelSymmetry: "口角の高さ",
 };
 
 export function ScoreRadar({ result, size = 320 }: ScoreRadarProps) {
@@ -35,7 +29,7 @@ export function ScoreRadar({ result, size = 320 }: ScoreRadarProps) {
   const cy = size / 2;
   const radius = size * 0.36;
   const labelOffset = 22;
-  const n = METRIC_ORDER.length;
+  const n = DISPLAYED_METRIC_KEYS.length;
 
   // 各軸の角度（真上から時計回り）
   const angle = (i: number) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
@@ -50,10 +44,10 @@ export function ScoreRadar({ result, size = 320 }: ScoreRadarProps) {
 
   // 同心円（背景の目盛り）
   const polygon = (ratio: number) =>
-    METRIC_ORDER.map((_, i) => point(i, ratio).join(",")).join(" ");
+    DISPLAYED_METRIC_KEYS.map((_, i) => point(i, ratio).join(",")).join(" ");
 
   // スコア（0-100）→ 0-1 に
-  const scorePolygon = METRIC_ORDER.map((key, i) =>
+  const scorePolygon = DISPLAYED_METRIC_KEYS.map((key, i) =>
     point(i, result.scores[key] / 100).join(","),
   ).join(" ");
 
@@ -75,7 +69,7 @@ export function ScoreRadar({ result, size = 320 }: ScoreRadarProps) {
         />
       ))}
 
-      {METRIC_ORDER.map((_, i) => {
+      {DISPLAYED_METRIC_KEYS.map((_, i) => {
         const [x, y] = point(i, 1);
         return (
           <line
@@ -98,7 +92,7 @@ export function ScoreRadar({ result, size = 320 }: ScoreRadarProps) {
         strokeWidth={1.5}
       />
 
-      {METRIC_ORDER.map((key, i) => {
+      {DISPLAYED_METRIC_KEYS.map((key, i) => {
         const a = angle(i);
         const x = cx + Math.cos(a) * (radius + labelOffset);
         const y = cy + Math.sin(a) * (radius + labelOffset);
@@ -136,7 +130,7 @@ export function ScoreRadar({ result, size = 320 }: ScoreRadarProps) {
         );
       })}
 
-      <title>{`TIAM 指標レーダー: ${METRIC_ORDER.map(
+      <title>{`TIAM 指標レーダー: ${DISPLAYED_METRIC_KEYS.map(
         (k) => `${METRIC_LABELS[k]} ${result.scores[k].toFixed(1)}`,
       ).join(" / ")}`}</title>
     </svg>

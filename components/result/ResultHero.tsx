@@ -17,7 +17,7 @@ export function ResultHero({
   scoreResult,
 }: ResultHeroProps) {
   return (
-    <section className="border-border/80 bg-card overflow-hidden rounded-xl border p-4 shadow-sm sm:p-5">
+    <section className="result-hero border-border/80 bg-card overflow-hidden rounded-xl border p-4 shadow-sm sm:p-5">
       {photoDataUrl ? (
         <div className="border-border bg-muted/30 relative overflow-hidden rounded-xl border">
           <FaceLandmarkOverlay

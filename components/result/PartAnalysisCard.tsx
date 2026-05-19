@@ -27,7 +27,7 @@ export function PartAnalysisCard({
   return (
     <article
       data-part-id={partId}
-      className="border-border/60 bg-card flex h-full flex-col rounded-xl border p-5 shadow-sm"
+      className="part-card border-border/60 bg-card flex h-full flex-col rounded-xl border p-5 shadow-sm"
     >
       <header className="border-tiam-gold/40 flex items-center gap-3 border-b pb-3">
         <div

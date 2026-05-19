@@ -2,13 +2,6 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  // 院方コンテンツ（T-13）: 読み取りは公開、書き込みは admin クレームのみ。
-  // 院内限定 URL（T-17）と組み合わせて初めてアクセス制限が完成する点に注意。
-    match /doctor_contents/{tenantId} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.token.admin == true;
-    }
-
     // 診断メタデータ（T-19）: 読み取りは resultId を知っている者に許可、一覧は staff/admin、書き込みはクライアント SDK からは禁止（API のみ）。
     match /diagnoses/{resultId} {
       allow get: if true;

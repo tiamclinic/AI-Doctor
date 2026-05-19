@@ -3,11 +3,14 @@
 // 黄金比に近づく "参考イメージ" を生成する。医療的変形は禁止し、
 // メイク／ヘア／ライティング調整による微差として表現する。
 
-import type { MetricKey } from "@/lib/faceAnalysis/goldenRatio";
+import {
+  DISPLAYED_METRIC_KEYS,
+  type DisplayedMetricKey,
+} from "@/lib/faceAnalysis/scoring";
 
 // 指示は「ごく僅か (very subtly)」を強調し、西洋的なコントゥアリングを連想させる
 // 言葉（contour, shading, sculpt）はできる限り避け、Japanese editorial の語彙で書く。
-const METRIC_INSTRUCTION: Record<MetricKey, string> = {
+const METRIC_INSTRUCTION: Record<DisplayedMetricKey, string> = {
   verticalThirds:
     "very subtly balance the top, middle, and bottom thirds of the face toward a 1:1:1 ratio using only soft front hair framing and slight chin highlight — no jaw reshaping",
   horizontalFifths:
@@ -18,32 +21,36 @@ const METRIC_INSTRUCTION: Record<MetricKey, string> = {
     "very subtly suggest the eye band sits near the mid vertical rhythm of the face using soft brow grooming and light forehead hair framing only — never shift, enlarge, or reshape the eyes",
   noseMouthRatio:
     "balance the visual nose-to-mouth width ratio toward 1:1.618 using a slightly defined lip outline in a sheer pink tone — no nose shadow sculpting, no nose narrowing",
-  eLine:
-    "guide upper and lower lip presence to feel aligned with the E-line via subtle lip tinting and a faint chin highlight — do not push the chin forward",
   faceContour:
     "refine the perceived face length-to-width balance toward 1:1.46 through hair volume on the sides and minimal cheekbone highlight — never slim the face shape itself",
   bilateralSymmetry:
     "gently balance perceived left-right harmony with even lighting, symmetric hair parting, and barely-there blush placement — do not mirror or warp facial features",
+  eyeLevelSymmetry:
+    "suggest even eye height through soft brow grooming and symmetric under-eye brightening — never move or resize the eyes",
+  mouthLevelSymmetry:
+    "suggest level mouth corners via neutral lip tint and soft smile-line softening — do not warp the mouth or jaw",
 };
 
-const METRIC_LABEL_EN: Record<MetricKey, string> = {
+const METRIC_LABEL_EN: Record<DisplayedMetricKey, string> = {
   verticalThirds: "vertical thirds",
   horizontalFifths: "horizontal fifths",
   eyeSpacing: "eye spacing",
   eyePosition: "vertical eye position",
   noseMouthRatio: "nose-to-mouth ratio",
-  eLine: "E-line alignment",
   faceContour: "face contour ratio",
   bilateralSymmetry: "bilateral symmetry",
+  eyeLevelSymmetry: "eye level symmetry",
+  mouthLevelSymmetry: "mouth corner level symmetry",
 };
 
 // 改善対象とする指標を「低い順 + 最大3つ」で選ぶ。
 function pickFocusMetrics(
-  scores: Record<MetricKey, number>,
+  scores: Partial<Record<DisplayedMetricKey, number>>,
   max = 3,
-): MetricKey[] {
-  return (Object.keys(scores) as MetricKey[])
-    .sort((a, b) => scores[a] - scores[b])
+): DisplayedMetricKey[] {
+  return [...DISPLAYED_METRIC_KEYS]
+    .filter((key) => typeof scores[key] === "number")
+    .sort((a, b) => scores[a]! - scores[b]!)
     .slice(0, max);
 }
 
@@ -74,14 +81,14 @@ const SAFETY_INSTRUCTIONS = [
 ].join(" ");
 
 export type BuildPortraitPromptArgs = {
-  scores: Record<MetricKey, number>;
+  scores: Partial<Record<DisplayedMetricKey, number>>;
   totalScore?: number;
 };
 
 export type BuildPortraitPromptResult = {
   prompt: string;
   summary: string; // ログ・UI 表示用の短い要約
-  focusMetrics: MetricKey[];
+  focusMetrics: DisplayedMetricKey[];
 };
 
 export function buildPortraitPrompt({

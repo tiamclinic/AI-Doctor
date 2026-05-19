@@ -12,7 +12,6 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "seed:doctor": "tsx scripts/seed/doctorContent.ts",
     "grant:admin": "tsx scripts/admin/grantAdmin.ts",
     "postinstall": "node scripts/copy-mediapipe-wasm.mjs"
   },
